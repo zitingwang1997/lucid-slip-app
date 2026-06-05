@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Shell } from "@/components/Shell";
 import { drawFortune, setPending } from "@/lib/fortune-store";
+import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,6 +19,34 @@ export const Route = createFileRoute("/")({
 function QuestionPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startVoice = useCallback(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const rec = new SpeechRecognition();
+    rec.lang = "zh-CN";
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setQ((prev) => (prev ? prev + " " + transcript : transcript));
+      setListening(false);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setListening(true);
+  }, []);
+
+  const stopVoice = useCallback(() => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  }, []);
 
   const proceed = () => {
     const fortune = drawFortune();
@@ -45,7 +74,7 @@ function QuestionPage() {
         }}
       />
 
-      <main className="relative flex flex-1 flex-col items-center justify-center px-8 pb-24">
+      <main className="relative flex flex-1 flex-col items-center justify-center px-8">
         <div className="flex w-full max-w-sm flex-col items-center slow-fade-in">
           <p
             className="mb-10 text-center text-[10px] uppercase text-foreground/35"
@@ -97,21 +126,55 @@ function QuestionPage() {
                   "linear-gradient(to right, transparent, oklch(0.74 0.13 55 / 0.35), transparent)",
               }}
             />
+
+            {/* voice input */}
+            <div className="relative mt-5 flex flex-col items-center gap-2">
+              <button
+                onClick={listening ? stopVoice : startVoice}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/25 transition-all hover:border-primary/60"
+                style={{
+                  boxShadow: listening
+                    ? "0 0 20px oklch(0.74 0.13 55 / 0.35), inset 0 0 12px oklch(0.74 0.13 55 / 0.15)"
+                    : "0 0 12px oklch(0.74 0.13 55 / 0.08)",
+                  animation: listening ? "breathe 1.5s ease-in-out infinite" : undefined,
+                }}
+                aria-label={listening ? "停止语音输入" : "语音输入"}
+              >
+                <Mic
+                  size={16}
+                  className={
+                    listening ? "text-primary" : "text-foreground/50"
+                  }
+                  strokeWidth={1.5}
+                />
+              </button>
+              {listening && (
+                <span
+                  className="font-serif-sc text-[10px] text-primary"
+                  style={{ letterSpacing: "0.2em" }}
+                >
+                  聆听中…
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <button
-          onClick={proceed}
-          className="mt-24 rounded-full border border-primary/35 bg-transparent px-14 py-3.5 font-serif-sc text-[15px] text-ivory transition-all hover:border-primary/70"
-          style={{
-            letterSpacing: "0.55em",
-            paddingRight: "calc(3.5rem - 0.55em)",
-            boxShadow:
-              "0 0 28px oklch(0.74 0.13 55 / 0.18), inset 0 0 20px oklch(0.74 0.13 55 / 0.05)",
-          }}
-        >
-          求一支签
-        </button>
+        {/* CTA pinned to bottom */}
+        <div className="absolute bottom-12 left-0 right-0 flex justify-center">
+          <button
+            onClick={proceed}
+            className="rounded-full border border-primary/35 bg-transparent px-14 py-3.5 font-serif-sc text-[15px] text-ivory transition-all hover:border-primary/70"
+            style={{
+              letterSpacing: "0.55em",
+              paddingRight: "calc(3.5rem - 0.55em)",
+              boxShadow:
+                "0 0 28px oklch(0.74 0.13 55 / 0.18), inset 0 0 20px oklch(0.74 0.13 55 / 0.05)",
+            }}
+          >
+            求一支签
+          </button>
+        </div>
       </main>
     </Shell>
   );
