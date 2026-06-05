@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Shell } from "@/components/Shell";
 import { drawFortune, setPending } from "@/lib/fortune-store";
+import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
