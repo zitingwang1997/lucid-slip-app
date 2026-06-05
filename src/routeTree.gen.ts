@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TempleRouteImport } from './routes/temple'
+import { Route as PoemRouteImport } from './routes/poem'
+import { Route as InterpretRouteImport } from './routes/interpret'
+import { Route as DrawRouteImport } from './routes/draw'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TempleRoute = TempleRouteImport.update({
+  id: '/temple',
+  path: '/temple',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoemRoute = PoemRouteImport.update({
+  id: '/poem',
+  path: '/poem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterpretRoute = InterpretRouteImport.update({
+  id: '/interpret',
+  path: '/interpret',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DrawRoute = DrawRouteImport.update({
+  id: '/draw',
+  path: '/draw',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/draw': typeof DrawRoute
+  '/interpret': typeof InterpretRoute
+  '/poem': typeof PoemRoute
+  '/temple': typeof TempleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/draw': typeof DrawRoute
+  '/interpret': typeof InterpretRoute
+  '/poem': typeof PoemRoute
+  '/temple': typeof TempleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/draw': typeof DrawRoute
+  '/interpret': typeof InterpretRoute
+  '/poem': typeof PoemRoute
+  '/temple': typeof TempleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/draw' | '/interpret' | '/poem' | '/temple'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/draw' | '/interpret' | '/poem' | '/temple'
+  id: '__root__' | '/' | '/draw' | '/interpret' | '/poem' | '/temple'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DrawRoute: typeof DrawRoute
+  InterpretRoute: typeof InterpretRoute
+  PoemRoute: typeof PoemRoute
+  TempleRoute: typeof TempleRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/temple': {
+      id: '/temple'
+      path: '/temple'
+      fullPath: '/temple'
+      preLoaderRoute: typeof TempleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/poem': {
+      id: '/poem'
+      path: '/poem'
+      fullPath: '/poem'
+      preLoaderRoute: typeof PoemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interpret': {
+      id: '/interpret'
+      path: '/interpret'
+      fullPath: '/interpret'
+      preLoaderRoute: typeof InterpretRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/draw': {
+      id: '/draw'
+      path: '/draw'
+      fullPath: '/draw'
+      preLoaderRoute: typeof DrawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +121,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DrawRoute: DrawRoute,
+  InterpretRoute: InterpretRoute,
+  PoemRoute: PoemRoute,
+  TempleRoute: TempleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
