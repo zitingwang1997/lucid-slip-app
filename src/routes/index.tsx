@@ -87,9 +87,9 @@ function QuestionPage() {
             className="font-serif-sc text-center text-ivory"
             style={{
               fontWeight: 300,
-              fontSize: "34px",
-              lineHeight: 1.7,
-              letterSpacing: "0.12em",
+              fontSize: "26px",
+              lineHeight: 1.65,
+              letterSpacing: "0.14em",
               textShadow:
                 "0 0 30px oklch(0.74 0.13 55 / 0.35), 0 0 80px oklch(0.68 0.16 45 / 0.15)",
             }}
@@ -98,6 +98,7 @@ function QuestionPage() {
             <br />
             你最想问什么？
           </h1>
+
 
           <div className="relative mt-16 w-full">
             {/* soft mist behind input */}
