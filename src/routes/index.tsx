@@ -20,7 +20,7 @@ function QuestionPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   const startVoice = useCallback(() => {
     const SpeechRecognition =
