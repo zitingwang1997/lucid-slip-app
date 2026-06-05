@@ -15,12 +15,6 @@ export const Route = createFileRoute("/")({
   component: QuestionPage,
 });
 
-const SUGGESTIONS = [
-  "我该离开现在的工作吗？",
-  "我为什么总是焦虑？",
-  "我要不要开始新的关系？",
-];
-
 function QuestionPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
@@ -38,76 +32,86 @@ function QuestionPage() {
   };
 
   return (
-    <Shell intensity={0.7}>
-      <main className="flex flex-1 flex-col items-center justify-center px-7 pb-14 pt-8">
-        <div className="w-full max-w-md slow-fade-in">
-          <p className="mb-6 text-center text-[10px] tracking-[0.5em] uppercase text-foreground/40">
-            此 刻
-          </p>
-          <h1
-            className="font-serif-sc text-center text-[28px] leading-[1.6] text-ivory"
-            style={{ fontWeight: 400, letterSpacing: "0.05em" }}
+    <Shell intensity={0.55}>
+      {/* central amber halo */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -z-0 h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, oklch(0.74 0.13 55 / 0.18) 0%, oklch(0.68 0.16 45 / 0.08) 35%, transparent 70%)",
+          filter: "blur(40px)",
+          animation: "breathe 9s ease-in-out infinite",
+        }}
+      />
+
+      <main className="relative flex flex-1 flex-col items-center justify-center px-8 pb-24">
+        <div className="flex w-full max-w-sm flex-col items-center slow-fade-in">
+          <p
+            className="mb-10 text-center text-[10px] uppercase text-foreground/35"
+            style={{ letterSpacing: "0.55em" }}
           >
-            此刻，你最想问什么？
-          </h1>
-          <p className="mt-4 text-center text-xs text-foreground/45 tracking-wider">
-            一个问题 · 一支签 · 一念清明
+            A Modern Ritual
           </p>
 
-          <div className="mt-12">
-            <div
-              className="relative rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm transition-all focus-within:border-primary/40"
-              style={{ boxShadow: "inset 0 1px 0 oklch(1 0 0 / 0.04)" }}
-            >
-              <textarea
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="输入你的困惑..."
-                rows={3}
-                className="w-full resize-none bg-transparent px-5 py-4 font-serif-sc text-base text-ivory placeholder:text-foreground/30 focus:outline-none"
-                style={{ letterSpacing: "0.03em", lineHeight: 1.8 }}
-              />
-              <button
-                type="button"
-                aria-label="语音输入"
-                className="absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full border border-border/60 text-foreground/50 transition-colors hover:text-primary"
-                onClick={() => {
-                  // graceful no-op for first cut
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="9" y="3" width="6" height="12" rx="3" />
-                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setQ(s)}
-                  className="rounded-full border border-border/40 bg-background/40 px-3 py-1.5 font-serif-sc text-[11px] text-foreground/55 transition-colors hover:border-primary/40 hover:text-foreground/85"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={proceed}
-            className="group mt-12 w-full rounded-full border border-primary/40 bg-gradient-to-b from-primary/15 to-transparent py-4 font-serif-sc text-base tracking-[0.5em] text-ivory transition-all hover:border-primary/70 hover:from-primary/25"
+          <h1
+            className="font-serif-sc text-center text-ivory"
             style={{
-              boxShadow: "0 0 36px oklch(0.74 0.13 55 / 0.15), inset 0 1px 0 oklch(1 0 0 / 0.06)",
+              fontWeight: 300,
+              fontSize: "34px",
+              lineHeight: 1.7,
+              letterSpacing: "0.12em",
+              textShadow:
+                "0 0 30px oklch(0.74 0.13 55 / 0.35), 0 0 80px oklch(0.68 0.16 45 / 0.15)",
             }}
           >
-            求 一 支 签
-          </button>
-          <p className="mt-6 text-center text-[10px] tracking-[0.3em] uppercase text-foreground/30">
-            Draw a Slip
-          </p>
+            此刻，
+            <br />
+            你最想问什么？
+          </h1>
+
+          <div className="relative mt-16 w-full">
+            {/* soft mist behind input */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-[-20px] inset-y-[-10px] rounded-full"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, oklch(0.24 0.02 55 / 0.55) 0%, transparent 70%)",
+                filter: "blur(18px)",
+              }}
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="输入你的困惑..."
+              className="relative w-full border-0 bg-transparent text-center font-serif-sc text-[15px] text-ivory placeholder:text-foreground/30 focus:outline-none"
+              style={{ letterSpacing: "0.08em", padding: "10px 0" }}
+            />
+            {/* hairline beneath */}
+            <div
+              aria-hidden
+              className="relative mx-auto mt-1 h-px w-2/3"
+              style={{
+                background:
+                  "linear-gradient(to right, transparent, oklch(0.74 0.13 55 / 0.35), transparent)",
+              }}
+            />
+          </div>
         </div>
+
+        <button
+          onClick={proceed}
+          className="mt-24 rounded-full border border-primary/35 bg-transparent px-14 py-3.5 font-serif-sc text-[15px] text-ivory transition-all hover:border-primary/70"
+          style={{
+            letterSpacing: "0.55em",
+            paddingRight: "calc(3.5rem - 0.55em)",
+            boxShadow:
+              "0 0 28px oklch(0.74 0.13 55 / 0.18), inset 0 0 20px oklch(0.74 0.13 55 / 0.05)",
+          }}
+        >
+          求一支签
+        </button>
       </main>
     </Shell>
   );
