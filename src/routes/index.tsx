@@ -31,7 +31,7 @@ function QuestionPage() {
     rec.lang = "zh-CN";
     rec.continuous = false;
     rec.interimResults = false;
-    rec.onresult = (event: SpeechRecognitionEvent) => {
+    rec.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setQ((prev) => (prev ? prev + " " + transcript : transcript));
       setListening(false);
