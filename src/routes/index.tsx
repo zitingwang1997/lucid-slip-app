@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useCallback } from "react";
+import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { Shell } from "@/components/Shell";
 import { drawFortune, setPending } from "@/lib/fortune-store";
 import { Mic } from "lucide-react";
@@ -21,6 +22,8 @@ function QuestionPage() {
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const inputAnchorRef = useRef<HTMLDivElement>(null);
 
   const startVoice = useCallback(() => {
     const SpeechRecognition =
@@ -61,98 +64,84 @@ function QuestionPage() {
   };
 
   return (
-    <Shell intensity={0.55}>
-      {/* central amber halo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 -z-0 h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, oklch(0.74 0.13 55 / 0.18) 0%, oklch(0.68 0.16 45 / 0.08) 35%, transparent 70%)",
-          filter: "blur(40px)",
-          animation: "breathe 9s ease-in-out infinite",
-        }}
-      />
+    <Shell intensity={0} overlayHeader>
+      <main
+        ref={mainRef}
+        className="relative z-10 flex h-[calc(100vh-4.5rem)] flex-col justify-between px-10 slow-fade-in"
+        style={{ paddingTop: "10vh", paddingBottom: "10vh", animationDuration: "1.8s" }}
+      >
+        <InputAmoebaAura containerRef={mainRef} anchorRef={inputAnchorRef} />
 
-      <main className="relative flex flex-1 flex-col items-center justify-center px-8">
-        <div className="flex w-full max-w-sm flex-col items-center slow-fade-in">
+        {/* 上区 */}
+        <div className="relative z-10 w-full text-center">
           <p
-            className="mb-10 text-center text-[10px] uppercase text-foreground/35"
-            style={{ letterSpacing: "0.55em" }}
+            className="font-serif-display text-[9px] uppercase text-foreground/25"
+            style={{ letterSpacing: "0.65em" }}
           >
             A Modern Ritual
           </p>
-
           <h1
-            className="font-serif-sc text-center text-ivory"
+            className="font-serif-sc text-ivory/95"
             style={{
-              fontWeight: 300,
-              fontSize: "26px",
-              lineHeight: 1.65,
-              letterSpacing: "0.14em",
-              textShadow:
-                "0 0 30px oklch(0.74 0.13 55 / 0.35), 0 0 80px oklch(0.68 0.16 45 / 0.15)",
+              marginTop: 16,
+              fontWeight: 200,
+              fontSize: "clamp(22px, 5.5vw, 28px)",
+              lineHeight: 1.85,
+              letterSpacing: "0.22em",
+              textShadow: "0 0 40px oklch(0.75 0.04 80 / 0.12)",
             }}
           >
             此刻，
             <br />
             你最想问什么？
           </h1>
+        </div>
 
-
-          <div className="relative mt-16 w-full">
-            {/* soft mist behind input */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-[-20px] inset-y-[-10px] rounded-full"
-              style={{
-                background:
-                  "radial-gradient(ellipse at center, oklch(0.24 0.02 55 / 0.55) 0%, transparent 70%)",
-                filter: "blur(18px)",
-              }}
-            />
+        {/* 中区 */}
+        <div
+          ref={inputAnchorRef}
+          className="relative flex w-full flex-col items-center text-center"
+        >
+          <div className="relative z-10 w-[70%]">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="输入你的困惑..."
-              className="relative w-full border-0 bg-transparent text-center font-serif-sc text-[15px] text-ivory placeholder:text-foreground/30 focus:outline-none"
-              style={{ letterSpacing: "0.08em", padding: "10px 0" }}
+              className="w-full border-0 bg-transparent text-center font-serif-sc text-[14px] placeholder:text-[rgba(35,14,7,0.45)] focus:outline-none"
+              style={{ letterSpacing: "0.12em", padding: "8px 0", color: "rgba(35, 14, 7, 0.85)" }}
             />
-            {/* hairline beneath */}
             <div
               aria-hidden
-              className="relative mx-auto mt-1 h-px w-2/3"
+              className="mx-auto mt-2 h-px w-1/2"
               style={{
                 background:
-                  "linear-gradient(to right, transparent, oklch(0.74 0.13 55 / 0.35), transparent)",
+                  "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.18), transparent)",
               }}
             />
-
-            {/* voice input */}
-            <div className="relative mt-5 flex flex-col items-center gap-2">
+            <div className="mt-6 flex flex-col items-center gap-1.5">
               <button
                 onClick={listening ? stopVoice : startVoice}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/25 transition-all hover:border-primary/60"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 transition-colors hover:border-foreground/25"
                 style={{
                   boxShadow: listening
-                    ? "0 0 20px oklch(0.74 0.13 55 / 0.35), inset 0 0 12px oklch(0.74 0.13 55 / 0.15)"
-                    : "0 0 12px oklch(0.74 0.13 55 / 0.08)",
-                  animation: listening ? "breathe 1.5s ease-in-out infinite" : undefined,
+                    ? "0 0 14px oklch(0.75 0.04 80 / 0.15)"
+                    : undefined,
+                  animation: listening ? "breathe 2s ease-in-out infinite" : undefined,
                 }}
                 aria-label={listening ? "停止语音输入" : "语音输入"}
               >
                 <Mic
-                  size={16}
+                  size={13}
                   className={
-                    listening ? "text-primary" : "text-foreground/50"
+                    listening ? "text-foreground/70" : "text-foreground/30"
                   }
-                  strokeWidth={1.5}
+                  strokeWidth={1.25}
                 />
               </button>
               {listening && (
                 <span
-                  className="font-serif-sc text-[10px] text-primary"
-                  style={{ letterSpacing: "0.2em" }}
+                  className="font-serif-sc text-[9px] text-foreground/40"
+                  style={{ letterSpacing: "0.25em" }}
                 >
                   聆听中…
                 </span>
@@ -161,16 +150,15 @@ function QuestionPage() {
           </div>
         </div>
 
-        {/* CTA pinned to bottom */}
-        <div className="absolute bottom-12 left-0 right-0 flex justify-center">
+        {/* 下区 */}
+        <div className="relative z-10 flex justify-center" style={{ marginBottom: "8vh" }}>
           <button
             onClick={proceed}
-            className="rounded-full border border-primary/35 bg-transparent px-14 py-3.5 font-serif-sc text-[15px] text-ivory transition-all hover:border-primary/70"
+            className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory"
             style={{
-              letterSpacing: "0.55em",
-              paddingRight: "calc(3.5rem - 0.55em)",
-              boxShadow:
-                "0 0 28px oklch(0.74 0.13 55 / 0.18), inset 0 0 20px oklch(0.74 0.13 55 / 0.05)",
+              letterSpacing: "0.48em",
+              paddingRight: "calc(3rem - 0.48em)",
+              boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
             }}
           >
             求一支签

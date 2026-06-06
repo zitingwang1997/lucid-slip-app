@@ -6,16 +6,31 @@ export function Shell({
   children,
   showTemple = true,
   intensity = 0.6,
+  overlayHeader = false,
 }: {
   children: ReactNode;
   showTemple?: boolean;
   intensity?: number;
+  overlayHeader?: boolean;
 }) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       <Ambient intensity={intensity} />
-      <div className="relative z-10 flex min-h-screen w-full flex-col">
-        <header className="flex items-center justify-between px-6 pt-6">
+
+      <div
+        className={
+          overlayHeader
+            ? "relative z-10 min-h-screen w-full"
+            : "relative z-10 flex min-h-screen w-full flex-col"
+        }
+      >
+        <header
+          className={
+            overlayHeader
+              ? "absolute left-0 top-0 z-30 flex w-full items-center justify-between px-6 pt-6 bg-transparent"
+              : "flex items-center justify-between px-6 pt-6 bg-transparent"
+          }
+        >
           <Link to="/" className="flex items-center gap-2 text-foreground/80">
             <span
               className="inline-block h-1.5 w-1.5 rounded-full bg-primary breathe"
@@ -25,6 +40,7 @@ export function Shell({
               一签
             </span>
           </Link>
+
           {showTemple && (
             <Link
               to="/temple"
@@ -34,6 +50,7 @@ export function Shell({
             </Link>
           )}
         </header>
+
         {children}
       </div>
     </div>
