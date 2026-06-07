@@ -98,6 +98,20 @@ function InterpretPage() {
     setResult(r);
     const cached = readKitsFromStorage(s);
     if (cached) setKitCache(cached);
+
+    // Persist interpretation to current history entry, and hydrate savedKeys
+    const histId = getCurrentHistoryId();
+    if (histId) {
+      const entry = getHistoryEntry(histId);
+      if (entry) {
+        if (!entry.interpretation) {
+          updateHistoryEntry(histId, { interpretation: r });
+        }
+        if (entry.savedKits) {
+          setSavedKeys(new Set(Object.keys(entry.savedKits)));
+        }
+      }
+    }
   }, [navigate]);
 
   const fetchKits = useCallback(
