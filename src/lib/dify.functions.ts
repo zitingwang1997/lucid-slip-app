@@ -100,33 +100,3 @@ export const interpretSlip = createServerFn({ method: "POST" })
     );
     return outputs;
   });
-
-// Workflow A: draw a random fortune slip
-export const drawSlip = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question?: string }) => data ?? {})
-  .handler(async ({ data }) => {
-    const apiKey = process.env.DIFY_DRAW_API_KEY;
-    if (!apiKey) throw new Error("DIFY_DRAW_API_KEY missing");
-    const outputs = await callDifyWorkflow(apiKey, {
-      user_question: data?.user_question ?? "",
-    });
-    const slip = outputs.slip ?? outputs.qian ?? outputs;
-    const user_question = outputs.user_question ?? data?.user_question ?? "";
-    return { user_question, slip };
-  });
-
-// Workflow B: interpret a selected slip
-export const interpretSlip = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question: string; qian_data: string }) => data)
-  .handler(async ({ data }) => {
-    const apiKey = process.env.DIFY_INTERPRET_API_KEY;
-    if (!apiKey) throw new Error("DIFY_INTERPRET_API_KEY missing");
-    const outputs = await callDifyWorkflow(apiKey, {
-      user_question: data.user_question ?? "",
-      qian_data:
-        typeof data.qian_data === "string"
-          ? data.qian_data
-          : JSON.stringify(data.qian_data ?? {}),
-    });
-    return outputs;
-  });
