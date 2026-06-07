@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { loadHistory, type HistoryEntry } from "@/lib/fortune-store";
+import { loadHistory, runHistoryMigration, type HistoryEntry } from "@/lib/fortune-store";
 
 export const Route = createFileRoute("/temple")({
   head: () => ({ meta: [{ title: "心庙 · 一签" }] }),
@@ -17,6 +17,7 @@ function TemplePage() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
+    runHistoryMigration();
     setEntries(loadHistory());
   }, []);
 
