@@ -14,71 +14,22 @@ export const Route = createFileRoute("/interpret")({
   component: InterpretPage,
 });
 
-type Remedy = {
-  key: string;
-  label: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  whisper: string;
-};
-
-const REMEDIES: Remedy[] = [
-  {
-    key: "action",
-    label: "今日行动",
-    eyebrow: "Today's Step",
-    title: "走一小步，胜过想十遍。",
-    body: "选一件你拖了很久的小事，用十分钟去做它。不必完成，只需开始。",
-    whisper: "起身的那一刻，路就出现了。",
-  },
-  {
-    key: "book",
-    label: "书籍推荐",
-    eyebrow: "A Book",
-    title: "《被讨厌的勇气》",
-    body: "当你被他人眼光所困，这本书会轻轻提醒你：人生是自己的课题。",
-    whisper: "翻开一页，便已是答复。",
-  },
-  {
-    key: "music",
-    label: "音乐疗愈",
-    eyebrow: "Sound",
-    title: "古琴 · 《平沙落雁》",
-    body: "在安静的时刻播放一遍。让琴声替你把心里乱掉的事，一件件放回原处。",
-    whisper: "音止时，你会松一口气。",
-  },
-  {
-    key: "stillness",
-    label: "静心练习",
-    eyebrow: "Stillness",
-    title: "三分钟呼吸",
-    body: "吸气四秒，停两秒，呼气六秒。重复九次。把注意力放在呼气最末端的那点空。",
-    whisper: "空，是新的开始。",
-  },
-  {
-    key: "scent",
-    label: "今日香气",
-    eyebrow: "Scent",
-    title: "檀香 · 一缕",
-    body: "点一支线香，或滴一滴精油。让气味先安顿空间，再来安顿你。",
-    whisper: "香起处，杂念止。",
-  },
-  {
-    key: "charm",
-    label: "护身物",
-    eyebrow: "Charm",
-    title: "一枚旧硬币",
-    body: "随身带一枚你用了很久的小物。它替你记得：你已走过那么多，没什么过不去。",
-    whisper: "旧物里藏着你的勇气。",
-  },
+const guidanceItems = [
+  { key: "color", label: "守护颜色" },
+  { key: "object", label: "护身物" },
+  { key: "number", label: "幸运数字" },
+  { key: "book", label: "书籍推荐" },
+  { key: "meditation", label: "静心练习" },
+  { key: "scent", label: "今日香气" },
+  { key: "music", label: "音乐疗愈" },
+  { key: "action", label: "今日行动" },
 ];
 
 function InterpretPage() {
   const navigate = useNavigate();
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [result, setResult] = useState<InterpretationResult | null>(null);
-  const [open, setOpen] = useState<Remedy | null>(null);
+  const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
 
   useEffect(() => {
     const s = getSelectedSlip();
@@ -93,46 +44,49 @@ function InterpretPage() {
 
   if (!slip) return null;
 
-  const xiang = result?.reading?.xiang?.content ?? "";
-  const yi = result?.reading?.yi?.content ?? "";
-  const xing = result?.reading?.xing?.content ?? "";
+  const xiang = result?.xiang_content ?? "";
+  const yi = result?.yi_content ?? "";
+  const xing = result?.xing_content ?? "";
+  const disclaimer =
+    result?.disclaimer ?? "我不能替你决定命运，\n但我可以陪你看清此刻。";
 
   return (
     <Shell intensity={0.4}>
-      <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col gap-10 px-6 pb-24 pt-4">
-        {/* Slip image card */}
+      <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-10 px-6 pb-24 pt-4">
         <section className="slow-fade-in pt-2">
-          <div
-            className="relative mx-auto w-full max-w-[320px] overflow-hidden rounded-[26px] border border-border/40"
-            style={{
-              boxShadow:
-                "0 30px 80px -25px oklch(0 0 0 / 0.65), 0 0 50px oklch(0.74 0.13 55 / 0.16), inset 0 1px 0 oklch(1 0 0 / 0.05)",
-            }}
-          >
+          <div className="mx-auto w-full" style={{ maxWidth: 520 }}>
             {slip.image_url ? (
               <img
-                src={slip.image_url as string}
+                src={slip.image_url}
                 alt="签"
-                className="block h-auto w-full select-none"
+                className="block select-none"
                 draggable={false}
+                style={{
+                  width: "100%",
+                  maxWidth: 520,
+                  height: "auto",
+                  objectFit: "contain",
+                  filter:
+                    "drop-shadow(0 30px 60px oklch(0 0 0 / 0.55)) drop-shadow(0 0 40px oklch(0.74 0.13 55 / 0.18))",
+                }}
               />
             ) : (
-              <div className="flex aspect-[2/3] items-center justify-center font-serif-sc text-sm text-foreground/45">
+              <div className="flex aspect-[2/3] items-center justify-center rounded-[26px] border border-border/40 font-serif-sc text-sm text-foreground/45">
                 签面缺失
               </div>
             )}
           </div>
         </section>
 
-        <Section eyebrow="01" title="象" delay={200}>
+        <Section eyebrow="01" title={result?.xiang_title || "象"} delay={200}>
           <ReadingBody text={xiang} placeholder="象意正在显现…" />
         </Section>
 
-        <Section eyebrow="02" title="意" delay={400}>
+        <Section eyebrow="02" title={result?.yi_title || "意"} delay={400}>
           <ReadingBody text={yi} placeholder="意正在沉淀…" />
         </Section>
 
-        <Section eyebrow="03" title="行" delay={600}>
+        <Section eyebrow="03" title={result?.xing_title || "行"} delay={600}>
           <ReadingBody text={xing} placeholder="行止待显…" />
         </Section>
 
@@ -141,10 +95,10 @@ function InterpretPage() {
             从签中取一味解药
           </p>
           <div className="flex flex-wrap gap-2.5">
-            {REMEDIES.map((r, i) => (
+            {guidanceItems.map((r, i) => (
               <button
                 key={r.key}
-                onClick={() => setOpen(r)}
+                onClick={() => setOpenItem(r)}
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",
@@ -165,10 +119,8 @@ function InterpretPage() {
           </div>
         </Section>
 
-        <p className="mx-auto mt-2 max-w-[280px] text-center font-serif-sc text-[11px] leading-[2.2] text-foreground/35">
-          我不能替你决定命运，
-          <br />
-          但我可以陪你看清此刻。
+        <p className="mx-auto mt-2 max-w-[320px] whitespace-pre-line text-center font-serif-sc text-[11px] leading-[2.2] text-foreground/35">
+          {disclaimer}
         </p>
 
         <Link
@@ -179,42 +131,36 @@ function InterpretPage() {
         </Link>
       </main>
 
-      <Drawer open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+      <Drawer open={!!openItem} onOpenChange={(o) => !o && setOpenItem(null)}>
         <DrawerContent
-          className="border-border/50 px-6 pb-10 pt-2"
+          className="border-border/50 px-6 pb-12 pt-2"
           style={{
             background:
               "linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.16 0.012 50) 100%)",
             boxShadow: "0 -30px 80px -20px oklch(0.74 0.13 55 / 0.18)",
           }}
         >
-          {open && (
+          {openItem && (
             <div className="mx-auto w-full max-w-[380px] slow-fade-in">
-              <DrawerTitle className="sr-only">{open.label}</DrawerTitle>
+              <DrawerTitle className="sr-only">{openItem.label}</DrawerTitle>
               <div className="mt-4 flex items-center justify-center gap-3">
                 <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
                 <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
-                  {open.eyebrow}
+                  Pouch
                 </span>
                 <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
               </div>
               <p
-                className="mt-3 text-center font-serif-sc text-[13px] tracking-[0.3em] text-foreground/55"
+                className="mt-3 text-center font-serif-sc text-[14px] tracking-[0.3em] text-ivory/90"
                 style={{ fontWeight: 400 }}
               >
-                {open.label}
+                {openItem.label}
               </p>
-              <h3
-                className="mt-6 text-center font-serif-sc text-[20px] leading-[1.7] text-ivory"
-                style={{ fontWeight: 400, letterSpacing: "0.1em" }}
-              >
-                {open.title}
-              </h3>
-              <p className="mx-auto mt-5 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2] text-ivory/75">
-                {open.body}
+              <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
+                这一味锦囊正在生成中。
               </p>
-              <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/45">
-                — {open.whisper} —
+              <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/40">
+                — 稍候片刻 —
               </p>
             </div>
           )}
