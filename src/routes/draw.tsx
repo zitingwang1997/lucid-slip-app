@@ -33,12 +33,26 @@ function DrawPage() {
     completed.current = true;
     try {
       const question = getUserQuestion();
-      const res = await drawSlipFn({ data: { user_question: question } });
-      const slip = (res?.slip ?? {}) as SelectedSlip;
+      if (!question || !question.trim()) {
+        navigate({ to: "/" });
+        return;
+      }
+      const res = await drawSlipFn({ data: { user_question: question.trim() } });
+      const slip = res?.slip as SelectedSlip | undefined;
+      const isValid =
+        slip &&
+        typeof slip === "object" &&
+        !Array.isArray(slip) &&
+        Object.keys(slip).length > 0 &&
+        (slip.image_url || slip.poem || slip.title || slip.number);
+      if (!isValid) {
+        console.error("[draw] invalid slip response:", res);
+        throw new Error("求签返回数据不完整，请稍后再试");
+      }
       setSelectedSlip(slip);
       pushHistory({
         id: crypto.randomUUID(),
-        question,
+        question: question.trim(),
         slip,
         createdAt: Date.now(),
       });
@@ -48,6 +62,7 @@ function DrawPage() {
       setError(e?.message ?? "求签失败，请稍后再试");
     }
   };
+
 
   useEffect(() => {
     const tick = (ts: number) => {
