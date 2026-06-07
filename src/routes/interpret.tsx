@@ -75,6 +75,7 @@ function InterpretPage() {
   const [kitCache, setKitCache] = useState<KitCache>({});
   const [kitsLoading, setKitsLoading] = useState(false);
   const [kitsError, setKitsError] = useState<string | null>(null);
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const fetchedRef = useRef(false);
 
   useEffect(() => {
