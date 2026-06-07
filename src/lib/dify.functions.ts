@@ -113,5 +113,24 @@ export const interpretSlip = createServerFn({ method: "POST" })
       },
       "interpret",
     );
-    return outputs;
+    const o: any = outputs ?? {};
+    const normalized = {
+      slip: o.slip ?? o.qian ?? undefined,
+      xiang_title: o.xiang_title ?? "",
+      xiang_content: o.xiang_content ?? "",
+      yi_title: o.yi_title ?? "",
+      yi_content: o.yi_content ?? "",
+      xing_title: o.xing_title ?? "",
+      xing_content: o.xing_content ?? "",
+      disclaimer: o.disclaimer ?? "",
+    };
+    const hasContent =
+      normalized.xiang_content || normalized.yi_content || normalized.xing_content;
+    if (!hasContent) {
+      console.error("[Dify interpret] empty outputs:", JSON.stringify(o).slice(0, 500));
+      throw new Error(
+        "Workflow B returned empty outputs. Check the Dify workflow's Code node — the LLM output is likely wrapped in ```json fences.",
+      );
+    }
+    return normalized;
   });
