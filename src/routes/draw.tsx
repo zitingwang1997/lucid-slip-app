@@ -5,6 +5,7 @@ import { Shell } from "@/components/Shell";
 import {
   getUserQuestion,
   pushHistory,
+  setCurrentHistoryId,
   setSelectedSlip,
   type SelectedSlip,
 } from "@/lib/fortune-store";
