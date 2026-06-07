@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { Shell } from "@/components/Shell";
-import { drawFortune, setPending } from "@/lib/fortune-store";
+import { setUserQuestion, clearRitualSession } from "@/lib/fortune-store";
 import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -52,14 +52,8 @@ function QuestionPage() {
   }, []);
 
   const proceed = () => {
-    const fortune = drawFortune();
-    setPending({
-      id: crypto.randomUUID(),
-      number: fortune.number,
-      poem: fortune.lines,
-      question: q.trim(),
-      createdAt: Date.now(),
-    });
+    clearRitualSession();
+    setUserQuestion(q.trim());
     navigate({ to: "/draw" });
   };
 
