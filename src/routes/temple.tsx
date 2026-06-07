@@ -30,7 +30,6 @@ interface OpenKitState {
     kit_content?: string;
     kit_action?: string;
     disclaimer?: string;
-    [key: string]: unknown;
   };
 }
 
