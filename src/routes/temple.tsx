@@ -87,11 +87,18 @@ function TemplePage() {
               const slipNumber = e.slip?.number;
               const slipTitle = e.slip?.title;
               return (
-                <button
+                <div
                   key={e.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openEntry(e)}
-                  className="slow-fade-in group block w-full overflow-hidden rounded-2xl border border-border/40 text-left transition-all hover:border-primary/45"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openEntry(e);
+                    }
+                  }}
+                  className="slow-fade-in group block w-full cursor-pointer overflow-hidden rounded-2xl border border-border/40 text-left transition-all hover:border-primary/45"
                   style={{
                     animationDelay: `${i * 90}ms`,
                     background:
