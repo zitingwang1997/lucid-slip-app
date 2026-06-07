@@ -148,9 +148,20 @@ function TemplePage() {
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {savedKits.map((k) => (
-                          <span
+                          <button
                             key={k.key}
-                            className="rounded-full border px-2.5 py-1 font-serif-sc text-[11px] tracking-[0.18em] text-ivory/80"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenKit({
+                                entryId: e.id,
+                                entryQuestion: e.question,
+                                kitKey: k.key,
+                                kitLabel: k.label ?? k.kit_title ?? k.key,
+                                kit: k,
+                              });
+                            }}
+                            className="rounded-full border px-2.5 py-1 font-serif-sc text-[11px] tracking-[0.18em] text-ivory/80 transition-all hover:border-primary/60 hover:text-ivory"
                             style={{
                               borderColor: "oklch(0.74 0.13 55 / 0.28)",
                               background:
@@ -158,7 +169,7 @@ function TemplePage() {
                             }}
                           >
                             {k.label}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     )}
