@@ -5,9 +5,13 @@ import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits } from "@/lib/dify.functions";
 import {
+  getCurrentHistoryId,
+  getHistoryEntry,
   getInterpretation,
   getSelectedSlip,
   getUserQuestion,
+  saveKitToHistory,
+  updateHistoryEntry,
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
