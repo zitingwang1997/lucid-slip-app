@@ -255,7 +255,10 @@ function TemplePage() {
 
             {openKit.entryQuestion && (
               <p className="mx-auto mt-7 max-w-[260px] font-serif-sc text-[10px] leading-[2] text-foreground/35">
-                来自：{openKit.entryQuestion}
+                {(() => {
+                  const d = new Date(openKit.entryCreatedAt);
+                  return `来自${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日，你写下的${openKit.entryQuestion}。`;
+                })()}
               </p>
             )}
 
