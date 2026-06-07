@@ -38,17 +38,18 @@ function DrawPage() {
         return;
       }
       const res = await drawSlipFn({ data: { user_question: question.trim() } });
-      const slip = res?.slip as SelectedSlip | undefined;
+      const maybeSlip = ((res as any)?.slip ?? res) as SelectedSlip | undefined;
       const isValid =
-        slip &&
-        typeof slip === "object" &&
-        !Array.isArray(slip) &&
-        Object.keys(slip).length > 0 &&
-        (slip.image_url || slip.poem || slip.title || slip.number);
+        maybeSlip &&
+        typeof maybeSlip === "object" &&
+        !Array.isArray(maybeSlip) &&
+        Object.keys(maybeSlip).length > 0 &&
+        (maybeSlip.image_url || maybeSlip.poem || maybeSlip.title || maybeSlip.number);
       if (!isValid) {
         console.error("[draw] invalid slip response:", res);
         throw new Error("求签返回数据不完整，请稍后再试");
       }
+      const slip = maybeSlip as SelectedSlip;
       setSelectedSlip(slip);
       pushHistory({
         id: crypto.randomUUID(),
@@ -141,7 +142,10 @@ function DrawPage() {
           ))}
 
         <button
-          onPointerDown={() => setHolding(true)}
+          onPointerDown={() => {
+            setError(null);
+            setHolding(true);
+          }}
           onPointerUp={() => setHolding(false)}
           onPointerLeave={() => setHolding(false)}
           onPointerCancel={() => setHolding(false)}
