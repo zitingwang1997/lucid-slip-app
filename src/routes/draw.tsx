@@ -5,6 +5,7 @@ import { Shell } from "@/components/Shell";
 import {
   getUserQuestion,
   pushHistory,
+  setCurrentHistoryId,
   setSelectedSlip,
   type SelectedSlip,
 } from "@/lib/fortune-store";
@@ -51,12 +52,15 @@ function DrawPage() {
       }
       const slip = maybeSlip as SelectedSlip;
       setSelectedSlip(slip);
+      const historyId = crypto.randomUUID();
       pushHistory({
-        id: crypto.randomUUID(),
+        id: historyId,
         question: question.trim(),
         slip,
         createdAt: Date.now(),
+        savedKits: {},
       });
+      setCurrentHistoryId(historyId);
       navigate({ to: "/poem" });
     } catch (e: any) {
       completed.current = false;

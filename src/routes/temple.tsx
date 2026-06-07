@@ -1,7 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { loadHistory, runHistoryMigration, type HistoryEntry } from "@/lib/fortune-store";
+import {
+  loadHistory,
+  restoreHistoryEntry,
+  runHistoryMigration,
+  type HistoryEntry,
+} from "@/lib/fortune-store";
 
 export const Route = createFileRoute("/temple")({
   head: () => ({ meta: [{ title: "心庙 · 一签" }] }),
@@ -14,12 +19,22 @@ function formatDate(ts: number) {
 }
 
 function TemplePage() {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     runHistoryMigration();
     setEntries(loadHistory());
   }, []);
+
+  function openEntry(entry: HistoryEntry) {
+    restoreHistoryEntry(entry.id);
+    if (entry.interpretation) {
+      navigate({ to: "/interpret" });
+    } else {
+      navigate({ to: "/poem" });
+    }
+  }
 
   return (
     <Shell intensity={0.4} showTemple={false}>
@@ -49,41 +64,84 @@ function TemplePage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-12 grid grid-cols-2 gap-5">
-            {entries.map((e, i) => (
-              <div
-                key={e.id}
-                className="slow-fade-in overflow-hidden rounded-2xl border border-border/40"
-                style={{
-                  animationDelay: `${i * 100}ms`,
-                  boxShadow:
-                    "0 20px 50px -25px oklch(0 0 0 / 0.6), 0 0 32px oklch(0.74 0.13 55 / 0.08)",
-                }}
-              >
-                {(e.slip?.image_url as string | undefined) ? (
-                  <img
-                    src={e.slip.image_url as string}
-                    alt="签"
-                    className="block h-auto w-full"
-                    draggable={false}
-                  />
-                ) : (
-                  <div className="flex aspect-[2/3] items-center justify-center font-serif-sc text-xs text-foreground/40">
-                    签面缺失
+          <div className="mt-12 flex flex-col gap-6">
+            {entries.map((e, i) => {
+              const savedKits = e.savedKits ? Object.values(e.savedKits) : [];
+              const slipNumber = e.slip?.number;
+              const slipTitle = e.slip?.title;
+              return (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => openEntry(e)}
+                  className="slow-fade-in group block w-full overflow-hidden rounded-2xl border border-border/40 text-left transition-all hover:border-primary/45"
+                  style={{
+                    animationDelay: `${i * 90}ms`,
+                    background:
+                      "linear-gradient(180deg, oklch(0.20 0.018 55 / 0.55) 0%, oklch(0.15 0.012 50 / 0.6) 100%)",
+                    boxShadow:
+                      "0 20px 50px -25px oklch(0 0 0 / 0.6), 0 0 32px oklch(0.74 0.13 55 / 0.08)",
+                  }}
+                >
+                  <div className="flex gap-4 p-4">
+                    <div className="shrink-0">
+                      {(e.slip?.image_url as string | undefined) ? (
+                        <img
+                          src={e.slip.image_url as string}
+                          alt="签"
+                          className="block h-28 w-20 rounded-md object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
+                          签面缺失
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] tracking-[0.35em] uppercase text-foreground/35">
+                        {formatDate(e.createdAt)}
+                      </p>
+                      {(slipNumber || slipTitle) && (
+                        <p className="mt-2 font-serif-sc text-[13px] tracking-[0.2em] text-ivory/85">
+                          {slipNumber ? `第 ${slipNumber} 签` : ""}
+                          {slipNumber && slipTitle ? " · " : ""}
+                          {slipTitle ?? ""}
+                        </p>
+                      )}
+                      {e.question && (
+                        <p className="mt-2 line-clamp-2 font-serif-sc text-[13px] leading-[1.7] text-foreground/65">
+                          {e.question}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-                <div className="px-3 py-3">
-                  <p className="text-[9px] tracking-[0.3em] uppercase text-foreground/35">
-                    {formatDate(e.createdAt)}
-                  </p>
-                  {e.question && (
-                    <p className="mt-1 truncate font-serif-sc text-[12px] text-foreground/60">
-                      {e.question}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
+                  <div className="border-t border-border/30 px-4 py-3">
+                    {savedKits.length === 0 ? (
+                      <p className="font-serif-sc text-[11px] tracking-[0.3em] text-foreground/35">
+                        尚未收入锦囊
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {savedKits.map((k) => (
+                          <span
+                            key={k.key}
+                            className="rounded-full border px-2.5 py-1 font-serif-sc text-[11px] tracking-[0.18em] text-ivory/80"
+                            style={{
+                              borderColor: "oklch(0.74 0.13 55 / 0.28)",
+                              background:
+                                "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.35))",
+                            }}
+                          >
+                            {k.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 

@@ -5,9 +5,13 @@ import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits } from "@/lib/dify.functions";
 import {
+  getCurrentHistoryId,
+  getHistoryEntry,
   getInterpretation,
   getSelectedSlip,
   getUserQuestion,
+  saveKitToHistory,
+  updateHistoryEntry,
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
@@ -71,6 +75,7 @@ function InterpretPage() {
   const [kitCache, setKitCache] = useState<KitCache>({});
   const [kitsLoading, setKitsLoading] = useState(false);
   const [kitsError, setKitsError] = useState<string | null>(null);
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -93,6 +98,20 @@ function InterpretPage() {
     setResult(r);
     const cached = readKitsFromStorage(s);
     if (cached) setKitCache(cached);
+
+    // Persist interpretation to current history entry, and hydrate savedKeys
+    const histId = getCurrentHistoryId();
+    if (histId) {
+      const entry = getHistoryEntry(histId);
+      if (entry) {
+        if (!entry.interpretation) {
+          updateHistoryEntry(histId, { interpretation: r });
+        }
+        if (entry.savedKits) {
+          setSavedKeys(new Set(Object.keys(entry.savedKits)));
+        }
+      }
+    }
   }, [navigate]);
 
   const fetchKits = useCallback(
@@ -150,6 +169,26 @@ function InterpretPage() {
       fetchedRef.current = true;
       void fetchKits(slip, result);
     }
+  }
+
+  function onSaveKit() {
+    if (!openItem) return;
+    const kit = kitCache[openItem.key];
+    if (!kit) return;
+    const histId = getCurrentHistoryId();
+    if (!histId) return;
+    if (savedKeys.has(openItem.key)) return;
+    saveKitToHistory(histId, openItem.key, {
+      key: openItem.key,
+      label: openItem.label,
+      kit_title: kit.kit_title,
+      kit_subtitle: kit.kit_subtitle,
+      kit_content: kit.kit_content,
+      kit_action: kit.kit_action,
+      disclaimer: kit.disclaimer,
+      savedAt: Date.now(),
+    });
+    setSavedKeys((prev) => new Set(prev).add(openItem.key));
   }
 
   if (!slip) return null;
@@ -310,6 +349,28 @@ function InterpretPage() {
                       {kitResult.disclaimer}
                     </p>
                   )}
+                  <div className="flex justify-center pt-2">
+                    {openItem && savedKeys.has(openItem.key) ? (
+                      <span
+                        className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/55"
+                        style={{ borderColor: "oklch(0.74 0.13 55 / 0.18)" }}
+                      >
+                        已 安 放
+                      </span>
+                    ) : (
+                      <button
+                        onClick={onSaveKit}
+                        className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/90 transition-all hover:text-ivory"
+                        style={{
+                          borderColor: "oklch(0.74 0.13 55 / 0.32)",
+                          background:
+                            "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                        }}
+                      >
+                        收 入 心 庙
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : kitsLoading ? (
                 <>

@@ -27,6 +27,7 @@ export interface InterpretationResult {
 const Q_KEY = "oneslip.question.v2";
 const SLIP_KEY = "oneslip.slip.v2";
 const INTERP_KEY = "oneslip.interpretation.v2";
+const CUR_HIST_KEY = "oneslip.currentHistoryId.v1";
 
 function safeGet<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
@@ -73,21 +74,35 @@ export function clearRitualSession() {
 }
 
 // ----- History (心庙) -----
+export interface SavedKit {
+  key: string;
+  label: string;
+  kit_title?: string;
+  kit_subtitle?: string;
+  kit_content?: string;
+  kit_action?: string;
+  disclaimer?: string;
+  savedAt: number;
+}
+
 export interface HistoryEntry {
   id: string;
   question: string;
   slip: SelectedSlip;
+  interpretation?: InterpretationResult;
+  savedKits?: Record<string, SavedKit>;
   createdAt: number;
 }
+
 const HIST_KEY = "oneslip.history.v2";
-const HIST_MIGRATION_KEY = "oneslip.history.migrated.v3";
+const HIST_MIGRATION_KEY = "oneslip.history.migrated.v4";
 
 /** One-time dev migration: clear old history entries that lack interpretation / savedKits.
  *  Runs only once per browser; future entries are preserved. */
 export function runHistoryMigration() {
   if (typeof window === "undefined") return;
   try {
-    if (localStorage.getItem(HIST_MIGRATION_KEY)) return; // already migrated
+    if (localStorage.getItem(HIST_MIGRATION_KEY)) return;
     localStorage.removeItem(HIST_KEY);
     localStorage.setItem(HIST_MIGRATION_KEY, "true");
   } catch {}
@@ -96,8 +111,67 @@ export function runHistoryMigration() {
 export function loadHistory(): HistoryEntry[] {
   return safeGet<HistoryEntry[]>(HIST_KEY) ?? [];
 }
+export const getHistory = loadHistory;
+
 export function pushHistory(entry: HistoryEntry) {
   const list = loadHistory();
   list.unshift(entry);
   safeSet(HIST_KEY, list.slice(0, 100));
+}
+
+export function getHistoryEntry(entryId: string): HistoryEntry | null {
+  return loadHistory().find((e) => e.id === entryId) ?? null;
+}
+
+export function updateHistoryEntry(entryId: string, patch: Partial<HistoryEntry>) {
+  const list = loadHistory();
+  const idx = list.findIndex((e) => e.id === entryId);
+  if (idx === -1) return;
+  list[idx] = { ...list[idx], ...patch };
+  safeSet(HIST_KEY, list);
+}
+
+export function saveKitToHistory(entryId: string, kitKey: string, kit: SavedKit) {
+  const list = loadHistory();
+  const idx = list.findIndex((e) => e.id === entryId);
+  if (idx === -1) return;
+  const existing = list[idx].savedKits ?? {};
+  if (existing[kitKey]) return; // do not overwrite
+  list[idx] = {
+    ...list[idx],
+    savedKits: { ...existing, [kitKey]: kit },
+  };
+  safeSet(HIST_KEY, list);
+}
+
+// ----- Current history id -----
+export function setCurrentHistoryId(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CUR_HIST_KEY, id);
+  } catch {}
+}
+export function getCurrentHistoryId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(CUR_HIST_KEY);
+  } catch {
+    return null;
+  }
+}
+export function clearCurrentHistoryId() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(CUR_HIST_KEY);
+  } catch {}
+}
+
+export function restoreHistoryEntry(entryId: string): HistoryEntry | null {
+  const entry = getHistoryEntry(entryId);
+  if (!entry) return null;
+  setUserQuestion(entry.question);
+  setSelectedSlip(entry.slip);
+  if (entry.interpretation) setInterpretation(entry.interpretation);
+  setCurrentHistoryId(entry.id);
+  return entry;
 }
