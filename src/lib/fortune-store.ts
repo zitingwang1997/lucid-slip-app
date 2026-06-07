@@ -70,3 +70,21 @@ export function clearRitualSession() {
   localStorage.removeItem(SLIP_KEY);
   localStorage.removeItem(INTERP_KEY);
 }
+
+// ----- History (心庙) -----
+export interface HistoryEntry {
+  id: string;
+  question: string;
+  slip: SelectedSlip;
+  createdAt: number;
+}
+const HIST_KEY = "oneslip.history.v2";
+
+export function loadHistory(): HistoryEntry[] {
+  return safeGet<HistoryEntry[]>(HIST_KEY) ?? [];
+}
+export function pushHistory(entry: HistoryEntry) {
+  const list = loadHistory();
+  list.unshift(entry);
+  safeSet(HIST_KEY, list.slice(0, 100));
+}
