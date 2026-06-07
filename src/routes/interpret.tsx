@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+import { getRemedyKit } from "@/lib/dify.functions";
 import {
   getInterpretation,
   getSelectedSlip,
@@ -17,21 +19,33 @@ export const Route = createFileRoute("/interpret")({
 });
 
 const guidanceItems = [
-  { key: "color", label: "守护颜色" },
-  { key: "object", label: "护身物" },
-  { key: "number", label: "幸运数字" },
-  { key: "book", label: "书籍推荐" },
+  { key: "guardian_color", label: "守护颜色" },
+  { key: "amulet", label: "护身物" },
+  { key: "lucky_number", label: "幸运数字" },
+  { key: "book_recommendation", label: "书籍推荐" },
   { key: "meditation", label: "静心练习" },
-  { key: "scent", label: "今日香气" },
-  { key: "music", label: "音乐疗愈" },
-  { key: "action", label: "今日行动" },
+  { key: "daily_scent", label: "今日香气" },
+  { key: "music_therapy", label: "音乐疗愈" },
+  { key: "daily_action", label: "今日行动" },
 ];
+
+interface RemedyKitResult {
+  kit_title: string;
+  kit_subtitle: string;
+  kit_content: string;
+  kit_action: string;
+  disclaimer: string;
+}
 
 function InterpretPage() {
   const navigate = useNavigate();
+  const remedyKitFn = useServerFn(getRemedyKit);
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [result, setResult] = useState<InterpretationResult | null>(null);
   const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
+  const [kitLoading, setKitLoading] = useState(false);
+  const [kitResult, setKitResult] = useState<RemedyKitResult | null>(null);
+  const [kitError, setKitError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = getUserQuestion();
@@ -53,6 +67,36 @@ function InterpretPage() {
     setSlip(s);
     setResult(r);
   }, [navigate]);
+
+  async function onSelectKit(item: { key: string; label: string }) {
+    setOpenItem(item);
+    setKitResult(null);
+    setKitError(null);
+    setKitLoading(true);
+    try {
+      const question = getUserQuestion();
+      const s = getSelectedSlip();
+      const interpretation = getInterpretation();
+      const res = await remedyKitFn({
+        data: {
+          user_question: question,
+          qian_data: JSON.stringify(s ?? {}),
+          interpretation: JSON.stringify(interpretation ?? {}),
+          kit_type: item.key,
+        },
+      });
+      setKitResult(res as RemedyKitResult);
+    } catch (err) {
+      console.error("[remedy kit] error", err);
+      setKitError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
+    } finally {
+      setKitLoading(false);
+    }
+  }
+
+  function retryKit() {
+    if (openItem) void onSelectKit(openItem);
+  }
 
 
   if (!slip) return null;
@@ -111,7 +155,7 @@ function InterpretPage() {
             {guidanceItems.map((r, i) => (
               <button
                 key={r.key}
-                onClick={() => setOpenItem(r)}
+                onClick={() => void onSelectKit(r)}
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",
@@ -167,14 +211,82 @@ function InterpretPage() {
                 className="mt-3 text-center font-serif-sc text-[14px] tracking-[0.3em] text-ivory/90"
                 style={{ fontWeight: 400 }}
               >
-                {openItem.label}
+                {kitResult?.kit_title || openItem.label}
               </p>
-              <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
-                这一味锦囊正在生成中。
-              </p>
-              <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/40">
-                — 稍候片刻 —
-              </p>
+
+              {kitLoading && (
+                <>
+                  <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
+                    这一味锦囊正在生成中。
+                  </p>
+                  <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/40">
+                    — 稍候片刻 —
+                  </p>
+                </>
+              )}
+
+              {!kitLoading && kitError && (
+                <div className="mt-8 flex flex-col items-center gap-5">
+                  <p className="mx-auto max-w-[300px] text-center font-serif-sc text-[13px] leading-[2] text-ivory/70">
+                    {kitError}
+                  </p>
+                  <button
+                    onClick={retryKit}
+                    className="rounded-full border px-5 py-2 font-serif-sc text-[12px] tracking-[0.3em] text-ivory/90 transition-all hover:text-ivory"
+                    style={{
+                      borderColor: "oklch(0.74 0.13 55 / 0.32)",
+                      background:
+                        "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                    }}
+                  >
+                    重新求取
+                  </button>
+                </div>
+              )}
+
+              {!kitLoading && !kitError && kitResult && (
+                <div className="mt-6 space-y-5">
+                  {kitResult.kit_subtitle && (
+                    <p className="text-center font-serif-sc text-[12px] tracking-[0.25em] text-primary/70">
+                      {kitResult.kit_subtitle}
+                    </p>
+                  )}
+                  {kitResult.kit_content && (
+                    <div className="space-y-3">
+                      {kitResult.kit_content.split(/\n+/).map((p, i) => (
+                        <p
+                          key={i}
+                          className="font-serif-sc text-[14px] leading-[2] text-ivory/80"
+                        >
+                          {p}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {kitResult.kit_action && (
+                    <div
+                      className="rounded-2xl border px-5 py-4"
+                      style={{
+                        borderColor: "oklch(0.74 0.13 55 / 0.28)",
+                        background:
+                          "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
+                      }}
+                    >
+                      <p className="mb-2 text-center font-serif-sc text-[11px] tracking-[0.4em] uppercase text-primary/70">
+                        Action
+                      </p>
+                      <p className="text-center font-serif-sc text-[14px] leading-[2] text-ivory/85">
+                        {kitResult.kit_action}
+                      </p>
+                    </div>
+                  )}
+                  {kitResult.disclaimer && (
+                    <p className="mx-auto max-w-[300px] whitespace-pre-line text-center font-serif-sc text-[11px] leading-[2] text-foreground/40">
+                      {kitResult.disclaimer}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DrawerContent>
