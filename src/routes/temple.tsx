@@ -18,9 +18,26 @@ function formatDate(ts: number) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
+interface OpenKitState {
+  entryId: string;
+  entryQuestion: string;
+  kitKey: string;
+  kitLabel: string;
+  kit: {
+    label?: string;
+    kit_title?: string;
+    kit_subtitle?: string;
+    kit_content?: string;
+    kit_action?: string;
+    disclaimer?: string;
+    [key: string]: unknown;
+  };
+}
+
 function TemplePage() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const [openKit, setOpenKit] = useState<OpenKitState | null>(null);
 
   useEffect(() => {
     runHistoryMigration();
