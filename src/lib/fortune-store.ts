@@ -1,25 +1,26 @@
 // Lightweight local storage for the current ritual session.
-// Only stores the user's question, the selected slip from Workflow A,
-// and the interpretation from Workflow B.
 
 export interface SelectedSlip {
+  id?: number;
+  number?: string;
+  realm?: string;
+  title?: string;
+  poem?: string;
+  keywords?: string;
+  allusion?: string;
   image_url?: string;
-  // Pass-through; Dify workflow B receives this as qian_data
-  [key: string]: unknown;
-}
-
-export interface ReadingSection {
-  content?: string;
   [key: string]: unknown;
 }
 
 export interface InterpretationResult {
-  reading?: {
-    xiang?: ReadingSection;
-    yi?: ReadingSection;
-    xing?: ReadingSection;
-    [key: string]: unknown;
-  };
+  slip?: SelectedSlip;
+  xiang_title?: string;
+  xiang_content?: string;
+  yi_title?: string;
+  yi_content?: string;
+  xing_title?: string;
+  xing_content?: string;
+  disclaimer?: string;
   [key: string]: unknown;
 }
 
