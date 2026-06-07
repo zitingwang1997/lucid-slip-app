@@ -90,10 +90,10 @@ export function InputAmoebaAura({
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    const fx = fxRef.current;
+    const fx = fxRef.current!;
     if (!fx) return;
 
-    const ct = fx.getContext("2d");
+    const ct = fx.getContext("2d")!;
     if (!ct) return;
 
     const reducedMotion = window.matchMedia(

@@ -1,7 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { getPending } from "@/lib/fortune-store";
+import {
+  getUserQuestion,
+  pushHistory,
+  setSelectedSlip,
+  type SelectedSlip,
+} from "@/lib/fortune-store";
+import { drawSlip } from "@/lib/dify.functions";
 
 export const Route = createFileRoute("/draw")({
   head: () => ({ meta: [{ title: "求签 · 一签" }] }),
@@ -12,17 +19,35 @@ const HOLD_MS = 3200;
 
 function DrawPage() {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(0); // 0–1
+  const drawSlipFn = useServerFn(drawSlip);
+  const [progress, setProgress] = useState(0);
   const [holding, setHolding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const completed = useRef(false);
   const raf = useRef<number | null>(null);
   const startTs = useRef<number>(0);
   const baseProgress = useRef(0);
 
-  useEffect(() => {
-    if (!getPending()) {
-      navigate({ to: "/" });
+  const complete = async () => {
+    if (completed.current) return;
+    completed.current = true;
+    try {
+      const question = getUserQuestion();
+      const res = await drawSlipFn({ data: { user_question: question } });
+      const slip = (res?.slip ?? {}) as SelectedSlip;
+      setSelectedSlip(slip);
+      pushHistory({
+        id: crypto.randomUUID(),
+        question,
+        slip,
+        createdAt: Date.now(),
+      });
+      navigate({ to: "/poem" });
+    } catch (e: any) {
+      completed.current = false;
+      setError(e?.message ?? "求签失败，请稍后再试");
     }
-  }, [navigate]);
+  };
 
   useEffect(() => {
     const tick = (ts: number) => {
@@ -31,8 +56,7 @@ function DrawPage() {
       const p = Math.min(1, baseProgress.current + elapsed / HOLD_MS);
       setProgress(p);
       if (p >= 1) {
-        // gentle pause before reveal
-        window.setTimeout(() => navigate({ to: "/poem" }), 600);
+        window.setTimeout(() => void complete(), 400);
         return;
       }
       if (holding) raf.current = requestAnimationFrame(tick);
@@ -46,7 +70,6 @@ function DrawPage() {
     } else {
       if (raf.current) cancelAnimationFrame(raf.current);
       baseProgress.current = progress;
-      // slow decay when released
       const decay = window.setInterval(() => {
         setProgress((prev) => {
           const next = Math.max(0, prev - 0.01);
@@ -64,19 +87,21 @@ function DrawPage() {
   }, [holding]);
 
   const pct = Math.round(progress * 100);
-  const guidance =
-    progress < 0.05
-      ? "按住光线，静心片刻"
-      : progress < 0.5
-      ? "让呼吸慢下来"
-      : progress < 0.95
-      ? "签意正在显现"
-      : "天意将至";
+  const guidance = error
+    ? error
+    : completed.current
+    ? "签意已现"
+    : progress < 0.05
+    ? "按住光线，静心片刻"
+    : progress < 0.5
+    ? "让呼吸慢下来"
+    : progress < 0.95
+    ? "签意正在显现"
+    : "天意将至";
 
   return (
     <Shell intensity={0.9} showTemple={false}>
       <main className="relative flex flex-1 flex-col items-center justify-center px-7 pb-16">
-        {/* Aura ring */}
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-700"
           style={{
@@ -86,7 +111,6 @@ function DrawPage() {
             filter: "blur(20px)",
           }}
         />
-        {/* Orbiting particles */}
         {holding &&
           Array.from({ length: 8 }).map((_, i) => (
             <span
@@ -101,7 +125,6 @@ function DrawPage() {
             />
           ))}
 
-        {/* Pressable area */}
         <button
           onPointerDown={() => setHolding(true)}
           onPointerUp={() => setHolding(false)}
@@ -110,7 +133,6 @@ function DrawPage() {
           aria-label="按住求签"
           className="relative grid h-[60vh] max-h-[520px] w-full place-items-center touch-none select-none"
         >
-          {/* The glowing vertical line — the fortune stick */}
           <div
             className="relative"
             style={{
