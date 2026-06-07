@@ -242,16 +242,38 @@ export const getRemedyKits = createServerFn({ method: "POST" })
     const apiKey = process.env.DIFY_REMEDY_API_KEY;
     if (!apiKey) throw new Error("DIFY_REMEDY_API_KEY missing");
 
-    const outputs = await callDifyWorkflow(
-      apiKey,
-      {
-        user_question: data.user_question ?? "",
-        qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
-        interpretation:
-          typeof data.interpretation === "string" ? data.interpretation : JSON.stringify(data.interpretation ?? {}),
-      },
-      "remedy",
-    );
+    let outputs: any;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        outputs = await callDifyWorkflow(
+          apiKey,
+          {
+            user_question: data.user_question ?? "",
+            qian_data:
+              typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
+            interpretation:
+              typeof data.interpretation === "string"
+                ? data.interpretation
+                : JSON.stringify(data.interpretation ?? {}),
+          },
+          "remedy",
+        );
+        break;
+      } catch (err) {
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        // Workflow C's internal code node throws "锦囊结果不是合法 JSON" when the
+        // LLM emits malformed JSON. This is transient — retry before failing.
+        const isTransient = /锦囊结果不是合法 JSON|not valid JSON|JSON/i.test(msg);
+        console.warn(`[Dify remedy] attempt ${attempt} failed (transient=${isTransient}):`, msg.slice(0, 200));
+        if (!isTransient || attempt === 3) {
+          throw new Error("锦囊生成暂时不稳定，请稍后再试一次");
+        }
+        await new Promise((r) => setTimeout(r, 600 * attempt));
+      }
+    }
+    if (!outputs) throw new Error("锦囊生成失败，请稍后再试");
 
     const o: any = outputs ?? {};
     let kitsRaw: any = o.kits ?? o;
