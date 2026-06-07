@@ -145,17 +145,70 @@ export const interpretSlip = createServerFn({ method: "POST" })
       parsed = o;
     }
 
-    const reading = parsed?.reading ?? {};
+    const reading = parsed?.reading ?? parsed ?? {};
+    const pick = (...keys: string[]) => {
+      for (const k of keys) {
+        const v = reading?.[k] ?? parsed?.[k];
+        if (v != null && v !== "") return v;
+      }
+      return undefined;
+    };
+    const pickContent = (obj: any, ...keys: string[]) => {
+      for (const k of keys) {
+        const node = obj?.[k];
+        if (typeof node === "string" && node) return node;
+        if (node && typeof node === "object") {
+          const c = node.content ?? node.text ?? node.body ?? node.description;
+          if (typeof c === "string" && c) return c;
+        }
+      }
+      return "";
+    };
+    const pickTitle = (obj: any, fallback: string, ...keys: string[]) => {
+      for (const k of keys) {
+        const node = obj?.[k];
+        if (node && typeof node === "object" && typeof node.title === "string" && node.title) {
+          return node.title;
+        }
+      }
+      return fallback;
+    };
+    const xiangKeys = ["xiang", "symbol", "image", "omen"];
+    const yiKeys = ["yi", "meaning", "interpretation"];
+    const xingKeys = ["xing", "action", "guidance", "next_step"];
+
     const normalized = {
       slip: parsed?.slip ?? o.slip ?? undefined,
-      xiang_title: reading?.xiang?.title ?? parsed?.xiang_title ?? "象",
-      xiang_content: reading?.xiang?.content ?? parsed?.xiang_content ?? "",
-      yi_title: reading?.yi?.title ?? parsed?.yi_title ?? "意",
-      yi_content: reading?.yi?.content ?? parsed?.yi_content ?? "",
-      xing_title: reading?.xing?.title ?? parsed?.xing_title ?? "行",
-      xing_content: reading?.xing?.content ?? parsed?.xing_content ?? "",
+      xiang_title:
+        pickTitle(reading, "", ...xiangKeys) ||
+        pickTitle(parsed, "", ...xiangKeys) ||
+        parsed?.xiang_title ||
+        "象",
+      xiang_content:
+        pickContent(reading, ...xiangKeys) ||
+        pickContent(parsed, ...xiangKeys) ||
+        (typeof pick("xiang_content") === "string" ? (pick("xiang_content") as string) : ""),
+      yi_title:
+        pickTitle(reading, "", ...yiKeys) ||
+        pickTitle(parsed, "", ...yiKeys) ||
+        parsed?.yi_title ||
+        "意",
+      yi_content:
+        pickContent(reading, ...yiKeys) ||
+        pickContent(parsed, ...yiKeys) ||
+        (typeof pick("yi_content") === "string" ? (pick("yi_content") as string) : ""),
+      xing_title:
+        pickTitle(reading, "", ...xingKeys) ||
+        pickTitle(parsed, "", ...xingKeys) ||
+        parsed?.xing_title ||
+        "行",
+      xing_content:
+        pickContent(reading, ...xingKeys) ||
+        pickContent(parsed, ...xingKeys) ||
+        (typeof pick("xing_content") === "string" ? (pick("xing_content") as string) : ""),
       disclaimer: parsed?.disclaimer ?? o.disclaimer ?? "",
     };
+
     console.log("[Dify interpret] normalized:", JSON.stringify(normalized).slice(0, 500));
     const hasContent =
       normalized.xiang_content || normalized.yi_content || normalized.xing_content;

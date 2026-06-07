@@ -5,9 +5,11 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import {
   getInterpretation,
   getSelectedSlip,
+  getUserQuestion,
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
+
 
 export const Route = createFileRoute("/interpret")({
   head: () => ({ meta: [{ title: "解签 · 一签" }] }),
@@ -32,15 +34,26 @@ function InterpretPage() {
   const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
 
   useEffect(() => {
+    const q = getUserQuestion();
     const s = getSelectedSlip();
     const r = getInterpretation();
-    if (!s) {
+    if (!q || !q.trim()) {
+
       navigate({ to: "/" });
+      return;
+    }
+    if (!s) {
+      navigate({ to: "/draw" });
+      return;
+    }
+    if (!r || (!r.xiang_content && !r.yi_content && !r.xing_content)) {
+      navigate({ to: "/poem" });
       return;
     }
     setSlip(s);
     setResult(r);
   }, [navigate]);
+
 
   if (!slip) return null;
 

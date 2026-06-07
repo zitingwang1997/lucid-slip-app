@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import {
   getSelectedSlip,
@@ -15,6 +15,17 @@ export const Route = createFileRoute("/poem")({
   component: PoemPage,
 });
 
+function buildQianData(slip: SelectedSlip) {
+  return {
+    id: slip.id,
+    number: slip.number,
+    title: slip.title,
+    poem: slip.poem,
+    allusion: slip.allusion,
+    meaning_seed: (slip as any).meaning_seed ?? slip.keywords,
+  };
+}
+
 function PoemPage() {
   const navigate = useNavigate();
   const interpretSlipFn = useServerFn(interpretSlip);
@@ -22,11 +33,17 @@ function PoemPage() {
   const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inflight = useRef(false);
 
   useEffect(() => {
+    const q = getUserQuestion();
+    if (!q || !q.trim()) {
+      navigate({ to: "/" });
+      return;
+    }
     const s = getSelectedSlip();
     if (!s) {
-      navigate({ to: "/" });
+      navigate({ to: "/draw" });
       return;
     }
     setSlip(s);
@@ -37,31 +54,37 @@ function PoemPage() {
   if (!slip) return null;
 
   const onInterpret = async () => {
-    if (loading) return;
+    if (loading || inflight.current) return;
+    inflight.current = true;
     setLoading(true);
     setError(null);
     try {
-      const readingSession = { user_question: getUserQuestion(), slip };
-      console.log("[OneSlip] readingSession before interpret", readingSession);
+      const user_question = getUserQuestion();
+      const qianData = buildQianData(slip);
       const payload = {
-        user_question: readingSession.user_question,
-        qian_data: JSON.stringify(readingSession.slip),
+        user_question,
+        qian_data: JSON.stringify(qianData),
       };
       console.log("[OneSlip] Workflow B payload", payload);
       const res = await interpretSlipFn({ data: payload });
-      console.log("[OneSlip] Workflow B raw response", res);
+      console.log("[OneSlip] Workflow B normalized response", res);
       const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
       if (!hasContent) {
-        throw new Error("解签结果为空，请检查 Dify Workflow B 输出");
+        throw new Error("解签结果为空，请重试");
       }
-      console.log("[OneSlip] normalized interpretation", res);
       setInterpretation(res);
       navigate({ to: "/interpret" });
     } catch (e: any) {
       console.error("[Workflow B] failed:", e);
-      setLoading(false);
       setError(e?.message ?? "解签失败，请稍后再试");
+    } finally {
+      inflight.current = false;
+      setLoading(false);
     }
+  };
+
+  const onRestart = () => {
+    navigate({ to: "/" });
   };
 
   return (
@@ -106,12 +129,20 @@ function PoemPage() {
               className="w-full rounded-full border border-primary/40 bg-gradient-to-b from-primary/15 to-transparent py-3.5 text-center font-serif-sc text-sm tracking-[0.5em] text-ivory transition-all hover:border-primary/70 disabled:opacity-60"
               style={{ boxShadow: "0 0 28px oklch(0.74 0.13 55 / 0.15)" }}
             >
-              {loading ? "解 签 中…" : "解 签"}
+              {loading ? "解 签 中…" : error ? "重 试 解 签" : "解 签"}
             </button>
             {error && (
-              <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">
-                {error}
-              </p>
+              <>
+                <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">
+                  {error}
+                </p>
+                <button
+                  onClick={onRestart}
+                  className="mt-1 rounded-full border border-foreground/20 px-6 py-2 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/70 transition-colors hover:border-foreground/40 hover:text-foreground"
+                >
+                  重 启 仪 式
+                </button>
+              </>
             )}
           </div>
         )}
