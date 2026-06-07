@@ -41,14 +41,21 @@ function PoemPage() {
     setLoading(true);
     setError(null);
     try {
+      const readingSession = { user_question: getUserQuestion(), slip };
+      console.log("[OneSlip] readingSession before interpret", readingSession);
       const payload = {
-        user_question: getUserQuestion(),
-        qian_data: JSON.stringify(slip),
+        user_question: readingSession.user_question,
+        qian_data: JSON.stringify(readingSession.slip),
       };
-      console.log("[Workflow B] request payload:", payload);
+      console.log("[OneSlip] Workflow B payload", payload);
       const res = await interpretSlipFn({ data: payload });
-      console.log("[Workflow B] response:", res);
-      setInterpretation(res ?? {});
+      console.log("[OneSlip] Workflow B raw response", res);
+      const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
+      if (!hasContent) {
+        throw new Error("解签结果为空，请检查 Dify Workflow B 输出");
+      }
+      console.log("[OneSlip] normalized interpretation", res);
+      setInterpretation(res);
       navigate({ to: "/interpret" });
     } catch (e: any) {
       console.error("[Workflow B] failed:", e);

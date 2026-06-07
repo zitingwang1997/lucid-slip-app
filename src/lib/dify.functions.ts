@@ -39,31 +39,46 @@ async function callDifyWorkflow(
   } catch {
     throw new Error("Dify returned non-JSON response");
   }
-  console.log(`[Dify ${label}] raw response:`, text.slice(0, 1500));
-  let outputs = json?.data?.outputs ?? {};
-  // If outputs is a string, try to parse it as JSON.
+  console.log(`[Dify ${label}] raw response:`, text.slice(0, 2000));
+
+  // Detect workflow-level failure (HTTP 200 but data.status === "failed").
+  const status = json?.data?.status;
+  const wfError = json?.data?.error;
+  if (status && status !== "succeeded") {
+    const msg = typeof wfError === "string" ? wfError : JSON.stringify(wfError ?? {});
+    console.error(`[Dify ${label}] workflow status=${status} error:`, msg);
+    throw new Error(`Dify workflow ${label} ${status}: ${msg.slice(0, 400)}`);
+  }
+
+  let outputs: any = json?.data?.outputs ?? json?.outputs ?? json?.result ?? json?.output ?? {};
+
+  // Unwrap string outputs / fenced ```json blocks.
+  const unfence = (s: string) => s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
   if (typeof outputs === "string") {
-    const parsed = tryParseJSON(outputs);
+    const parsed = tryParseJSON(unfence(outputs));
     if (parsed && typeof parsed === "object") outputs = parsed;
   }
-  // If there's a single key wrapping the real payload as a JSON string, unwrap it.
+  // If single-key wrapper holds the real payload as a JSON string, unwrap it.
   const keys = Object.keys(outputs ?? {});
   if (keys.length === 1) {
     const only = (outputs as any)[keys[0]];
-    const parsed = tryParseJSON(only);
-    if (parsed && typeof parsed === "object") outputs = parsed;
+    if (typeof only === "string") {
+      const parsed = tryParseJSON(unfence(only));
+      if (parsed && typeof parsed === "object") outputs = parsed;
+    }
   }
-  // Also try parsing string-valued fields like `slip` that may be JSON strings.
+  // Parse string-valued fields that look like JSON (e.g. slip).
   for (const k of Object.keys(outputs ?? {})) {
     const v = (outputs as any)[k];
-    if (typeof v === "string" && (v.startsWith("{") || v.startsWith("["))) {
-      const parsed = tryParseJSON(v);
+    if (typeof v === "string" && (v.trim().startsWith("{") || v.trim().startsWith("[") || v.trim().startsWith("```"))) {
+      const parsed = tryParseJSON(unfence(v));
       if (parsed && typeof parsed === "object") (outputs as any)[k] = parsed;
     }
   }
   console.log(`[Dify ${label}] parsed outputs keys:`, Object.keys(outputs ?? {}));
   return outputs;
 }
+
 
 // Workflow A: draw a random fortune slip
 export const drawSlip = createServerFn({ method: "POST" })
@@ -98,5 +113,24 @@ export const interpretSlip = createServerFn({ method: "POST" })
       },
       "interpret",
     );
-    return outputs;
+    const o: any = outputs ?? {};
+    const normalized = {
+      slip: o.slip ?? o.qian ?? undefined,
+      xiang_title: o.xiang_title ?? "",
+      xiang_content: o.xiang_content ?? "",
+      yi_title: o.yi_title ?? "",
+      yi_content: o.yi_content ?? "",
+      xing_title: o.xing_title ?? "",
+      xing_content: o.xing_content ?? "",
+      disclaimer: o.disclaimer ?? "",
+    };
+    const hasContent =
+      normalized.xiang_content || normalized.yi_content || normalized.xing_content;
+    if (!hasContent) {
+      console.error("[Dify interpret] empty outputs:", JSON.stringify(o).slice(0, 500));
+      throw new Error(
+        "Workflow B returned empty outputs. Check the Dify workflow's Code node — the LLM output is likely wrapped in ```json fences.",
+      );
+    }
+    return normalized;
   });
