@@ -21,6 +21,7 @@ function formatDate(ts: number) {
 interface OpenKitState {
   entryId: string;
   entryQuestion: string;
+  entryCreatedAt: number;
   kitKey: string;
   kitLabel: string;
   kit: {
