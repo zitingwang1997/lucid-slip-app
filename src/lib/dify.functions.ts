@@ -114,23 +114,47 @@ export const interpretSlip = createServerFn({ method: "POST" })
       "interpret",
     );
     const o: any = outputs ?? {};
+
+    // Workflow B returns a single `result` string containing JSON.
+    let parsed: any = null;
+    const rawResult = o.result ?? o.output ?? o.text;
+    if (typeof rawResult === "string") {
+      let s = rawResult.trim();
+      s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      const first = s.indexOf("{");
+      const last = s.lastIndexOf("}");
+      if (first !== -1 && last !== -1 && last > first) {
+        s = s.slice(first, last + 1);
+      }
+      try {
+        parsed = JSON.parse(s);
+      } catch (err) {
+        console.error("[Dify interpret] failed to parse result string:", err, s.slice(0, 500));
+        throw new Error("解签结果解析失败：Workflow B result 不是合法 JSON");
+      }
+    } else if (rawResult && typeof rawResult === "object") {
+      parsed = rawResult;
+    } else {
+      parsed = o;
+    }
+
+    const reading = parsed?.reading ?? {};
     const normalized = {
-      slip: o.slip ?? o.qian ?? undefined,
-      xiang_title: o.xiang_title ?? "",
-      xiang_content: o.xiang_content ?? "",
-      yi_title: o.yi_title ?? "",
-      yi_content: o.yi_content ?? "",
-      xing_title: o.xing_title ?? "",
-      xing_content: o.xing_content ?? "",
-      disclaimer: o.disclaimer ?? "",
+      slip: parsed?.slip ?? o.slip ?? undefined,
+      xiang_title: reading?.xiang?.title ?? parsed?.xiang_title ?? "象",
+      xiang_content: reading?.xiang?.content ?? parsed?.xiang_content ?? "",
+      yi_title: reading?.yi?.title ?? parsed?.yi_title ?? "意",
+      yi_content: reading?.yi?.content ?? parsed?.yi_content ?? "",
+      xing_title: reading?.xing?.title ?? parsed?.xing_title ?? "行",
+      xing_content: reading?.xing?.content ?? parsed?.xing_content ?? "",
+      disclaimer: parsed?.disclaimer ?? o.disclaimer ?? "",
     };
+    console.log("[Dify interpret] normalized:", JSON.stringify(normalized).slice(0, 500));
     const hasContent =
       normalized.xiang_content || normalized.yi_content || normalized.xing_content;
     if (!hasContent) {
       console.error("[Dify interpret] empty outputs:", JSON.stringify(o).slice(0, 500));
-      throw new Error(
-        "Workflow B returned empty outputs. Check the Dify workflow's Code node — the LLM output is likely wrapped in ```json fences.",
-      );
+      throw new Error("Workflow B 返回内容为空");
     }
     return normalized;
   });
