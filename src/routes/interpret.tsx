@@ -349,6 +349,28 @@ function InterpretPage() {
                       {kitResult.disclaimer}
                     </p>
                   )}
+                  <div className="flex justify-center pt-2">
+                    {openItem && savedKeys.has(openItem.key) ? (
+                      <span
+                        className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/55"
+                        style={{ borderColor: "oklch(0.74 0.13 55 / 0.18)" }}
+                      >
+                        已 安 放
+                      </span>
+                    ) : (
+                      <button
+                        onClick={onSaveKit}
+                        className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/90 transition-all hover:text-ivory"
+                        style={{
+                          borderColor: "oklch(0.74 0.13 55 / 0.32)",
+                          background:
+                            "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                        }}
+                      >
+                        收 入 心 庙
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : kitsLoading ? (
                 <>
