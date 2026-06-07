@@ -188,6 +188,83 @@ function TemplePage() {
           </Link>
         )}
       </main>
+
+      {openKit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          onClick={() => setOpenKit(null)}
+          style={{
+            background: "oklch(0 0 0 / 0.7)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            className="relative z-10 w-full max-w-[360px] rounded-[28px] border px-7 py-8 text-center shadow-2xl slow-fade-in"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              borderColor: "oklch(0.74 0.13 55 / 0.24)",
+              background:
+                "radial-gradient(circle at 50% 0%, oklch(0.74 0.13 55 / 0.12), transparent 42%), linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.14 0.012 50) 100%)",
+              boxShadow:
+                "0 30px 90px oklch(0 0 0 / 0.55), 0 0 50px oklch(0.74 0.13 55 / 0.12)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setOpenKit(null)}
+              className="absolute right-5 top-4 text-[18px] text-foreground/35 transition hover:text-foreground/70"
+              aria-label="关闭"
+            >
+              ×
+            </button>
+
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+              <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
+                POUCH
+              </span>
+              <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+            </div>
+
+            <p
+              className="mt-4 font-serif-sc text-[15px] tracking-[0.3em] text-ivory/90"
+              style={{ fontWeight: 400 }}
+            >
+              {openKit.kit.label ?? openKit.kit.kit_title ?? openKit.kitLabel}
+            </p>
+
+            {openKit.kit.kit_subtitle && (
+              <p className="mt-3 font-serif-sc text-[12px] tracking-[0.2em] text-primary/70">
+                {openKit.kit.kit_subtitle}
+              </p>
+            )}
+
+            {openKit.kit.kit_content && (
+              <p className="mx-auto mt-7 max-w-[290px] whitespace-pre-line font-serif-sc text-[14px] leading-[2.2] text-ivory/75">
+                {openKit.kit.kit_content}
+              </p>
+            )}
+
+            {openKit.kit.kit_action && (
+              <p className="mx-auto mt-5 max-w-[290px] whitespace-pre-line font-serif-sc text-[13px] leading-[2.1] text-ivory/65">
+                {openKit.kit.kit_action}
+              </p>
+            )}
+
+            {openKit.entryQuestion && (
+              <p className="mx-auto mt-7 max-w-[260px] font-serif-sc text-[10px] leading-[2] text-foreground/35">
+                来自：{openKit.entryQuestion}
+              </p>
+            )}
+
+            {openKit.kit.disclaimer && (
+              <p className="mx-auto mt-4 max-w-[240px] whitespace-pre-line font-serif-sc text-[10px] leading-[2] text-foreground/30">
+                {openKit.kit.disclaimer}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
