@@ -156,6 +156,7 @@ function TemplePage() {
                               setOpenKit({
                                 entryId: e.id,
                                 entryQuestion: e.question,
+                                entryCreatedAt: e.createdAt,
                                 kitKey: k.key,
                                 kitLabel: k.label ?? k.kit_title ?? k.key,
                                 kit: k,
