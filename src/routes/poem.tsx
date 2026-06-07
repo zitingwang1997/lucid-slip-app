@@ -41,15 +41,17 @@ function PoemPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await interpretSlipFn({
-        data: {
-          user_question: getUserQuestion(),
-          qian_data: JSON.stringify(slip),
-        },
-      });
+      const payload = {
+        user_question: getUserQuestion(),
+        qian_data: JSON.stringify(slip),
+      };
+      console.log("[Workflow B] request payload:", payload);
+      const res = await interpretSlipFn({ data: payload });
+      console.log("[Workflow B] response:", res);
       setInterpretation(res ?? {});
       navigate({ to: "/interpret" });
     } catch (e: any) {
+      console.error("[Workflow B] failed:", e);
       setLoading(false);
       setError(e?.message ?? "解签失败，请稍后再试");
     }
