@@ -34,12 +34,11 @@ function InterpretPage() {
   const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
 
   useEffect(() => {
-    const q = (typeof window !== "undefined"
-      ? (localStorage.getItem("oneslip.question.v2") ?? "")
-      : "");
+    const q = getUserQuestion();
     const s = getSelectedSlip();
     const r = getInterpretation();
-    if (!q || q === '""') {
+    if (!q || !q.trim()) {
+
       navigate({ to: "/" });
       return;
     }
