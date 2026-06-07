@@ -21,6 +21,7 @@ function formatDate(ts: number) {
 interface OpenKitState {
   entryId: string;
   entryQuestion: string;
+  entryCreatedAt: number;
   kitKey: string;
   kitLabel: string;
   kit: {
@@ -155,6 +156,7 @@ function TemplePage() {
                               setOpenKit({
                                 entryId: e.id,
                                 entryQuestion: e.question,
+                                entryCreatedAt: e.createdAt,
                                 kitKey: k.key,
                                 kitLabel: k.label ?? k.kit_title ?? k.key,
                                 kit: k,
@@ -253,7 +255,10 @@ function TemplePage() {
 
             {openKit.entryQuestion && (
               <p className="mx-auto mt-7 max-w-[260px] font-serif-sc text-[10px] leading-[2] text-foreground/35">
-                来自：{openKit.entryQuestion}
+                {(() => {
+                  const d = new Date(openKit.entryCreatedAt);
+                  return `来自${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日，你写下的${openKit.entryQuestion}。`;
+                })()}
               </p>
             )}
 
