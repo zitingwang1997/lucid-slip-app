@@ -32,15 +32,27 @@ function InterpretPage() {
   const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
 
   useEffect(() => {
+    const q = (typeof window !== "undefined"
+      ? (localStorage.getItem("oneslip.question.v2") ?? "")
+      : "");
     const s = getSelectedSlip();
     const r = getInterpretation();
-    if (!s) {
+    if (!q || q === '""') {
       navigate({ to: "/" });
+      return;
+    }
+    if (!s) {
+      navigate({ to: "/draw" });
+      return;
+    }
+    if (!r || (!r.xiang_content && !r.yi_content && !r.xing_content)) {
+      navigate({ to: "/poem" });
       return;
     }
     setSlip(s);
     setResult(r);
   }, [navigate]);
+
 
   if (!slip) return null;
 
