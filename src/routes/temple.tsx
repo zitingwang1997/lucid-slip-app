@@ -163,7 +163,7 @@ function TemplePage() {
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
