@@ -9,11 +9,7 @@ function tryParseJSON(v: unknown): any {
   }
 }
 
-async function callDifyWorkflow(
-  apiKey: string,
-  inputs: Record<string, unknown>,
-  label: string,
-) {
+async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>, label: string) {
   const baseUrl = (process.env.DIFY_BASE_URL ?? "https://api.dify.ai/v1").replace(/\/$/, "");
   console.log(`[Dify ${label}] request inputs:`, JSON.stringify(inputs).slice(0, 500));
   const res = await fetch(`${baseUrl}/workflows/run`, {
@@ -53,7 +49,11 @@ async function callDifyWorkflow(
   let outputs: any = json?.data?.outputs ?? json?.outputs ?? json?.result ?? json?.output ?? {};
 
   // Unwrap string outputs / fenced ```json blocks.
-  const unfence = (s: string) => s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const unfence = (s: string) =>
+    s
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
   if (typeof outputs === "string") {
     const parsed = tryParseJSON(unfence(outputs));
     if (parsed && typeof parsed === "object") outputs = parsed;
@@ -79,18 +79,13 @@ async function callDifyWorkflow(
   return outputs;
 }
 
-
 // Workflow A: draw a random fortune slip
 export const drawSlip = createServerFn({ method: "POST" })
   .inputValidator((data: { user_question?: string }) => data ?? {})
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_DRAW_API_KEY;
     if (!apiKey) throw new Error("DIFY_DRAW_API_KEY missing");
-    const outputs = await callDifyWorkflow(
-      apiKey,
-      { user_question: data?.user_question ?? "" },
-      "draw",
-    );
+    const outputs = await callDifyWorkflow(apiKey, { user_question: data?.user_question ?? "" }, "draw");
     const slip = outputs.slip ?? outputs.qian ?? outputs;
     const user_question = outputs.user_question ?? data?.user_question ?? "";
     return { user_question, slip };
@@ -106,10 +101,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
       apiKey,
       {
         user_question: data.user_question ?? "",
-        qian_data:
-          typeof data.qian_data === "string"
-            ? data.qian_data
-            : JSON.stringify(data.qian_data ?? {}),
+        qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
       },
       "interpret",
     );
@@ -120,7 +112,10 @@ export const interpretSlip = createServerFn({ method: "POST" })
     const rawResult = o.result ?? o.output ?? o.text;
     if (typeof rawResult === "string") {
       let s = rawResult.trim();
-      s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      s = s
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
       const first = s.indexOf("{");
       const last = s.lastIndexOf("}");
       if (first !== -1 && last !== -1 && last > first) {
@@ -180,28 +175,18 @@ export const interpretSlip = createServerFn({ method: "POST" })
     const normalized = {
       slip: parsed?.slip ?? o.slip ?? undefined,
       xiang_title:
-        pickTitle(reading, "", ...xiangKeys) ||
-        pickTitle(parsed, "", ...xiangKeys) ||
-        parsed?.xiang_title ||
-        "象",
+        pickTitle(reading, "", ...xiangKeys) || pickTitle(parsed, "", ...xiangKeys) || parsed?.xiang_title || "象",
       xiang_content:
         pickContent(reading, ...xiangKeys) ||
         pickContent(parsed, ...xiangKeys) ||
         (typeof pick("xiang_content") === "string" ? (pick("xiang_content") as string) : ""),
-      yi_title:
-        pickTitle(reading, "", ...yiKeys) ||
-        pickTitle(parsed, "", ...yiKeys) ||
-        parsed?.yi_title ||
-        "意",
+      yi_title: pickTitle(reading, "", ...yiKeys) || pickTitle(parsed, "", ...yiKeys) || parsed?.yi_title || "意",
       yi_content:
         pickContent(reading, ...yiKeys) ||
         pickContent(parsed, ...yiKeys) ||
         (typeof pick("yi_content") === "string" ? (pick("yi_content") as string) : ""),
       xing_title:
-        pickTitle(reading, "", ...xingKeys) ||
-        pickTitle(parsed, "", ...xingKeys) ||
-        parsed?.xing_title ||
-        "行",
+        pickTitle(reading, "", ...xingKeys) || pickTitle(parsed, "", ...xingKeys) || parsed?.xing_title || "行",
       xing_content:
         pickContent(reading, ...xingKeys) ||
         pickContent(parsed, ...xingKeys) ||
@@ -210,11 +195,53 @@ export const interpretSlip = createServerFn({ method: "POST" })
     };
 
     console.log("[Dify interpret] normalized:", JSON.stringify(normalized).slice(0, 500));
-    const hasContent =
-      normalized.xiang_content || normalized.yi_content || normalized.xing_content;
+    const hasContent = normalized.xiang_content || normalized.yi_content || normalized.xing_content;
     if (!hasContent) {
       console.error("[Dify interpret] empty outputs:", JSON.stringify(o).slice(0, 500));
       throw new Error("Workflow B 返回内容为空");
     }
+    return normalized;
+  });
+
+// Workflow C: generate a selected remedy kit
+export const getRemedyKit = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { user_question: string; qian_data: string; interpretation: string; kit_type: string }) => data,
+  )
+  .handler(async ({ data }) => {
+    const apiKey = process.env.DIFY_REMEDY_API_KEY;
+    if (!apiKey) throw new Error("DIFY_REMEDY_API_KEY missing");
+
+    const outputs = await callDifyWorkflow(
+      apiKey,
+      {
+        user_question: data.user_question ?? "",
+        qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
+        interpretation:
+          typeof data.interpretation === "string" ? data.interpretation : JSON.stringify(data.interpretation ?? {}),
+        kit_type: data.kit_type ?? "",
+      },
+      "remedy",
+    );
+
+    const o: any = outputs ?? {};
+
+    const normalized = {
+      kit_title: String(o.kit_title ?? o.title ?? ""),
+      kit_subtitle: String(o.kit_subtitle ?? o.subtitle ?? ""),
+      kit_content: String(o.kit_content ?? o.content ?? ""),
+      kit_action: String(o.kit_action ?? o.action ?? ""),
+      disclaimer: String(o.disclaimer ?? "此内容仅用于自我反思，不代表确定的命运判断。"),
+    };
+
+    console.log("[Dify remedy] normalized:", JSON.stringify(normalized).slice(0, 500));
+
+    const hasContent = normalized.kit_title || normalized.kit_content || normalized.kit_action;
+
+    if (!hasContent) {
+      console.error("[Dify remedy] empty outputs:", JSON.stringify(o).slice(0, 500));
+      throw new Error("锦囊内容为空，请稍后再试");
+    }
+
     return normalized;
   });
