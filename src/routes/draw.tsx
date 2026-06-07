@@ -142,7 +142,10 @@ function DrawPage() {
           ))}
 
         <button
-          onPointerDown={() => setHolding(true)}
+          onPointerDown={() => {
+            setError(null);
+            setHolding(true);
+          }}
           onPointerUp={() => setHolding(false)}
           onPointerLeave={() => setHolding(false)}
           onPointerCancel={() => setHolding(false)}
