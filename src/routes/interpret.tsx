@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { getRemedyKit } from "@/lib/dify.functions";
+import { getRemedyKits } from "@/lib/dify.functions";
 import {
   getInterpretation,
   getSelectedSlip,
@@ -12,22 +12,21 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 
-
 export const Route = createFileRoute("/interpret")({
   head: () => ({ meta: [{ title: "解签 · 一签" }] }),
   component: InterpretPage,
 });
 
 const guidanceItems = [
+  { key: "daily_action", label: "今日行动" },
+  { key: "book", label: "推荐书籍" },
   { key: "guardian_color", label: "守护颜色" },
   { key: "amulet", label: "护身物" },
-  { key: "lucky_number", label: "幸运数字" },
-  { key: "book_recommendation", label: "书籍推荐" },
-  { key: "meditation", label: "静心练习" },
   { key: "daily_scent", label: "今日香气" },
-  { key: "music_therapy", label: "音乐疗愈" },
-  { key: "daily_action", label: "今日行动" },
-];
+  { key: "lucky_number", label: "幸运数字" },
+] as const;
+
+type KitKey = (typeof guidanceItems)[number]["key"];
 
 interface RemedyKitResult {
   kit_title: string;
@@ -37,22 +36,48 @@ interface RemedyKitResult {
   disclaimer: string;
 }
 
+type KitCache = Partial<Record<KitKey, RemedyKitResult>>;
+
+const KITS_STORAGE_PREFIX = "oneslip.remedyKits.v1.";
+
+function slipCacheId(slip: SelectedSlip | null): string {
+  if (!slip) return "unknown";
+  return String(slip.id ?? slip.number ?? "unknown");
+}
+
+function readKitsFromStorage(slip: SelectedSlip | null): KitCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(KITS_STORAGE_PREFIX + slipCacheId(slip));
+    return raw ? (JSON.parse(raw) as KitCache) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeKitsToStorage(slip: SelectedSlip | null, kits: KitCache) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(KITS_STORAGE_PREFIX + slipCacheId(slip), JSON.stringify(kits));
+  } catch {}
+}
+
 function InterpretPage() {
   const navigate = useNavigate();
-  const remedyKitFn = useServerFn(getRemedyKit);
+  const remedyKitsFn = useServerFn(getRemedyKits);
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [result, setResult] = useState<InterpretationResult | null>(null);
-  const [openItem, setOpenItem] = useState<{ key: string; label: string } | null>(null);
-  const [kitLoading, setKitLoading] = useState(false);
-  const [kitResult, setKitResult] = useState<RemedyKitResult | null>(null);
-  const [kitError, setKitError] = useState<string | null>(null);
+  const [openItem, setOpenItem] = useState<{ key: KitKey; label: string } | null>(null);
+  const [kitCache, setKitCache] = useState<KitCache>({});
+  const [kitsLoading, setKitsLoading] = useState(false);
+  const [kitsError, setKitsError] = useState<string | null>(null);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
     const q = getUserQuestion();
     const s = getSelectedSlip();
     const r = getInterpretation();
     if (!q || !q.trim()) {
-
       navigate({ to: "/" });
       return;
     }
@@ -66,38 +91,66 @@ function InterpretPage() {
     }
     setSlip(s);
     setResult(r);
+    const cached = readKitsFromStorage(s);
+    if (cached) setKitCache(cached);
   }, [navigate]);
 
-  async function onSelectKit(item: { key: string; label: string }) {
-    setOpenItem(item);
-    setKitResult(null);
-    setKitError(null);
-    setKitLoading(true);
-    try {
-      const question = getUserQuestion();
-      const s = getSelectedSlip();
-      const interpretation = getInterpretation();
-      const res = await remedyKitFn({
-        data: {
-          user_question: question,
-          qian_data: JSON.stringify(s ?? {}),
-          interpretation: JSON.stringify(interpretation ?? {}),
-          kit_type: item.key,
-        },
-      });
-      setKitResult(res as RemedyKitResult);
-    } catch (err) {
-      console.error("[remedy kit] error", err);
-      setKitError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
-    } finally {
-      setKitLoading(false);
+  const fetchKits = useCallback(
+    async (s: SelectedSlip, r: InterpretationResult) => {
+      setKitsLoading(true);
+      setKitsError(null);
+      try {
+        const question = getUserQuestion();
+        const qianData = {
+          id: s.id,
+          number: s.number,
+          realm: s.realm,
+          title: s.title,
+          poem: s.poem,
+          keywords: s.keywords,
+          allusion: s.allusion,
+        };
+        const interpretationPayload = {
+          xiang_content: r.xiang_content ?? "",
+          yi_content: r.yi_content ?? "",
+          xing_content: r.xing_content ?? "",
+        };
+        const res = await remedyKitsFn({
+          data: {
+            user_question: question,
+            qian_data: JSON.stringify(qianData),
+            interpretation: JSON.stringify(interpretationPayload),
+          },
+        });
+        const kits = (res?.kits ?? {}) as KitCache;
+        setKitCache(kits);
+        writeKitsToStorage(s, kits);
+      } catch (err) {
+        console.error("[remedy kits] error", err);
+        setKitsError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
+      } finally {
+        setKitsLoading(false);
+      }
+    },
+    [remedyKitsFn],
+  );
+
+  useEffect(() => {
+    if (!slip || !result) return;
+    if (fetchedRef.current) return;
+    const cached = readKitsFromStorage(slip);
+    const hasAll = cached && guidanceItems.every((g) => cached[g.key]);
+    if (hasAll) return;
+    fetchedRef.current = true;
+    void fetchKits(slip, result);
+  }, [slip, result, fetchKits]);
+
+  function retryKits() {
+    if (slip && result) {
+      fetchedRef.current = true;
+      void fetchKits(slip, result);
     }
   }
-
-  function retryKit() {
-    if (openItem) void onSelectKit(openItem);
-  }
-
 
   if (!slip) return null;
 
@@ -106,6 +159,8 @@ function InterpretPage() {
   const xing = result?.xing_content ?? "";
   const disclaimer =
     result?.disclaimer ?? "我不能替你决定命运，\n但我可以陪你看清此刻。";
+
+  const kitResult = openItem ? kitCache[openItem.key] : undefined;
 
   return (
     <Shell intensity={0.4}>
@@ -155,7 +210,7 @@ function InterpretPage() {
             {guidanceItems.map((r, i) => (
               <button
                 key={r.key}
-                onClick={() => void onSelectKit(r)}
+                onClick={() => setOpenItem({ key: r.key, label: r.label })}
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",
@@ -214,37 +269,7 @@ function InterpretPage() {
                 {kitResult?.kit_title || openItem.label}
               </p>
 
-              {kitLoading && (
-                <>
-                  <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
-                    这一味锦囊正在生成中。
-                  </p>
-                  <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/40">
-                    — 稍候片刻 —
-                  </p>
-                </>
-              )}
-
-              {!kitLoading && kitError && (
-                <div className="mt-8 flex flex-col items-center gap-5">
-                  <p className="mx-auto max-w-[300px] text-center font-serif-sc text-[13px] leading-[2] text-ivory/70">
-                    {kitError}
-                  </p>
-                  <button
-                    onClick={retryKit}
-                    className="rounded-full border px-5 py-2 font-serif-sc text-[12px] tracking-[0.3em] text-ivory/90 transition-all hover:text-ivory"
-                    style={{
-                      borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                      background:
-                        "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
-                    }}
-                  >
-                    重新求取
-                  </button>
-                </div>
-              )}
-
-              {!kitLoading && !kitError && kitResult && (
+              {kitResult ? (
                 <div className="mt-6 space-y-5">
                   {kitResult.kit_subtitle && (
                     <p className="text-center font-serif-sc text-[12px] tracking-[0.25em] text-primary/70">
@@ -286,6 +311,36 @@ function InterpretPage() {
                     </p>
                   )}
                 </div>
+              ) : kitsLoading ? (
+                <>
+                  <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
+                    六味锦囊正在备好。
+                  </p>
+                  <p className="mx-auto mt-6 max-w-[260px] text-center font-serif-sc text-[11px] tracking-[0.3em] text-foreground/40">
+                    — 稍候片刻 —
+                  </p>
+                </>
+              ) : kitsError ? (
+                <div className="mt-8 flex flex-col items-center gap-5">
+                  <p className="mx-auto max-w-[300px] text-center font-serif-sc text-[13px] leading-[2] text-ivory/70">
+                    {kitsError}
+                  </p>
+                  <button
+                    onClick={retryKits}
+                    className="rounded-full border px-5 py-2 font-serif-sc text-[12px] tracking-[0.3em] text-ivory/90 transition-all hover:text-ivory"
+                    style={{
+                      borderColor: "oklch(0.74 0.13 55 / 0.32)",
+                      background:
+                        "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                    }}
+                  >
+                    重新求取
+                  </button>
+                </div>
+              ) : (
+                <p className="mx-auto mt-8 max-w-[300px] text-center font-serif-sc text-[14px] leading-[2.2] text-ivory/70">
+                  锦囊尚未备好，请稍后再试。
+                </p>
               )}
             </div>
           )}

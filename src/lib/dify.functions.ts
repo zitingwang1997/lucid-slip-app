@@ -203,10 +203,40 @@ export const interpretSlip = createServerFn({ method: "POST" })
     return normalized;
   });
 
-// Workflow C: generate a selected remedy kit
-export const getRemedyKit = createServerFn({ method: "POST" })
+// Workflow C: generate all 6 remedy kits in one call
+const REMEDY_KIT_KEYS = [
+  "daily_action",
+  "book",
+  "guardian_color",
+  "amulet",
+  "daily_scent",
+  "lucky_number",
+] as const;
+
+type RemedyKitKey = (typeof REMEDY_KIT_KEYS)[number];
+
+interface RemedyKit {
+  kit_title: string;
+  kit_subtitle: string;
+  kit_content: string;
+  kit_action: string;
+  disclaimer: string;
+}
+
+function normalizeKit(raw: any): RemedyKit {
+  const o = raw ?? {};
+  return {
+    kit_title: String(o.kit_title ?? o.title ?? ""),
+    kit_subtitle: String(o.kit_subtitle ?? o.subtitle ?? ""),
+    kit_content: String(o.kit_content ?? o.content ?? ""),
+    kit_action: String(o.kit_action ?? o.action ?? ""),
+    disclaimer: String(o.disclaimer ?? "此内容仅用于自我反思，不代表确定的命运判断。"),
+  };
+}
+
+export const getRemedyKits = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: { user_question: string; qian_data: string; interpretation: string; kit_type: string }) => data,
+    (data: { user_question: string; qian_data: string; interpretation: string }) => data,
   )
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_REMEDY_API_KEY;
@@ -219,29 +249,57 @@ export const getRemedyKit = createServerFn({ method: "POST" })
         qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
         interpretation:
           typeof data.interpretation === "string" ? data.interpretation : JSON.stringify(data.interpretation ?? {}),
-        kit_type: data.kit_type ?? "",
       },
       "remedy",
     );
 
     const o: any = outputs ?? {};
+    let kitsRaw: any = o.kits ?? o;
 
-    const normalized = {
-      kit_title: String(o.kit_title ?? o.title ?? ""),
-      kit_subtitle: String(o.kit_subtitle ?? o.subtitle ?? ""),
-      kit_content: String(o.kit_content ?? o.content ?? ""),
-      kit_action: String(o.kit_action ?? o.action ?? ""),
-      disclaimer: String(o.disclaimer ?? "此内容仅用于自我反思，不代表确定的命运判断。"),
-    };
+    if (typeof kitsRaw === "string") {
+      let s = kitsRaw.trim();
+      s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      const first = s.indexOf("{");
+      const last = s.lastIndexOf("}");
+      if (first !== -1 && last !== -1 && last > first) s = s.slice(first, last + 1);
+      try {
+        kitsRaw = JSON.parse(s);
+      } catch (err) {
+        console.warn("[Dify remedy] JSON.parse failed, trying jsonrepair:", err);
+        try {
+          const { jsonrepair } = await import("jsonrepair");
+          kitsRaw = JSON.parse(jsonrepair(s));
+        } catch (err2) {
+          console.error("[Dify remedy] jsonrepair failed:", err2, s.slice(0, 1000));
+          throw new Error("锦囊解析失败：Workflow C kits 不是合法 JSON");
+        }
+      }
+    }
 
-    console.log("[Dify remedy] normalized:", JSON.stringify(normalized).slice(0, 500));
-
-    const hasContent = normalized.kit_title || normalized.kit_content || normalized.kit_action;
-
-    if (!hasContent) {
-      console.error("[Dify remedy] empty outputs:", JSON.stringify(o).slice(0, 500));
+    if (!kitsRaw || typeof kitsRaw !== "object") {
       throw new Error("锦囊内容为空，请稍后再试");
     }
 
-    return normalized;
+    const kits = {} as Record<RemedyKitKey, RemedyKit>;
+    const missing: string[] = [];
+    for (const key of REMEDY_KIT_KEYS) {
+      const node = (kitsRaw as any)[key];
+      if (!node || typeof node !== "object") {
+        missing.push(key);
+        kits[key] = normalizeKit({});
+      } else {
+        kits[key] = normalizeKit(node);
+      }
+    }
+
+    if (missing.length === REMEDY_KIT_KEYS.length) {
+      console.error("[Dify remedy] all kits missing. raw:", JSON.stringify(kitsRaw).slice(0, 500));
+      throw new Error("锦囊内容为空，请稍后再试");
+    }
+    if (missing.length) {
+      console.warn("[Dify remedy] missing kit keys:", missing);
+    }
+
+    console.log("[Dify remedy] kit keys:", Object.keys(kits));
+    return { kits };
   });
