@@ -94,8 +94,13 @@ function QuestionPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="输入你的困惑..."
-              className="w-full border-0 bg-transparent text-center font-serif-sc text-[14px] placeholder:text-white/65 focus:outline-none"
-              style={{ letterSpacing: "0.12em", padding: "8px 0", color: "rgba(255, 255, 255, 0.94)" }}
+              className="w-full border-0 bg-transparent text-center font-serif-sc text-[14px] placeholder:!text-white/65 focus:outline-none"
+              style={{
+                letterSpacing: "0.12em",
+                padding: "8px 0",
+                color: "rgba(255, 255, 255, 0.94)",
+                WebkitTextFillColor: "rgba(255, 255, 255, 0.94)",
+              }}
             />
             <div
               aria-hidden
