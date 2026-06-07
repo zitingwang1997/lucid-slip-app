@@ -100,6 +100,8 @@ function QuestionPage() {
                 padding: "8px 0",
                 color: "rgba(255, 255, 255, 0.94)",
                 WebkitTextFillColor: "rgba(255, 255, 255, 0.94)",
+                mixBlendMode: "normal",
+                opacity: 1,
               }}
             />
             <div
