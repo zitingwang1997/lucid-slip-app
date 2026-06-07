@@ -129,8 +129,15 @@ export const interpretSlip = createServerFn({ method: "POST" })
       try {
         parsed = JSON.parse(s);
       } catch (err) {
-        console.error("[Dify interpret] failed to parse result string:", err, s.slice(0, 500));
-        throw new Error("解签结果解析失败：Workflow B result 不是合法 JSON");
+        console.warn("[Dify interpret] JSON.parse failed, trying jsonrepair:", err);
+        try {
+          const { jsonrepair } = await import("jsonrepair");
+          parsed = JSON.parse(jsonrepair(s));
+          console.log("[Dify interpret] jsonrepair succeeded");
+        } catch (err2) {
+          console.error("[Dify interpret] jsonrepair also failed:", err2, s.slice(0, 1000));
+          throw new Error("解签结果解析失败：Workflow B result 不是合法 JSON");
+        }
       }
     } else if (rawResult && typeof rawResult === "object") {
       parsed = rawResult;
