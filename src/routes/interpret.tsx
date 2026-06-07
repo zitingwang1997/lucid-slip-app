@@ -5,9 +5,11 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import {
   getInterpretation,
   getSelectedSlip,
+  getUserQuestion,
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
+
 
 export const Route = createFileRoute("/interpret")({
   head: () => ({ meta: [{ title: "解签 · 一签" }] }),
