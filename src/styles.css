@@ -209,3 +209,18 @@
   border-radius: inherit;
 }
 
+
+.ritual-question-input {
+  color: rgba(255,255,255,0.94) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.94) !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+  isolation: isolate;
+  background-color: transparent !important;
+}
+
+.ritual-question-input::placeholder {
+  color: rgba(255,255,255,0.65) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.65) !important;
+  opacity: 1 !important;
+}

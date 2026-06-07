@@ -94,7 +94,7 @@ function QuestionPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="输入你的困惑..."
-              className="ritual-question-input w-full border-0 bg-red-500 text-center font-serif-sc text-[14px] focus:outline-none"
+              className="ritual-question-input w-full border-0 bg-transparent text-center font-serif-sc text-[14px] focus:outline-none"
               style={{
                 letterSpacing: "0.12em",
                 padding: "8px 0",
