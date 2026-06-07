@@ -18,9 +18,25 @@ function formatDate(ts: number) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
+interface OpenKitState {
+  entryId: string;
+  entryQuestion: string;
+  kitKey: string;
+  kitLabel: string;
+  kit: {
+    label?: string;
+    kit_title?: string;
+    kit_subtitle?: string;
+    kit_content?: string;
+    kit_action?: string;
+    disclaimer?: string;
+  };
+}
+
 function TemplePage() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const [openKit, setOpenKit] = useState<OpenKitState | null>(null);
 
   useEffect(() => {
     runHistoryMigration();
@@ -70,11 +86,18 @@ function TemplePage() {
               const slipNumber = e.slip?.number;
               const slipTitle = e.slip?.title;
               return (
-                <button
+                <div
                   key={e.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openEntry(e)}
-                  className="slow-fade-in group block w-full overflow-hidden rounded-2xl border border-border/40 text-left transition-all hover:border-primary/45"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openEntry(e);
+                    }
+                  }}
+                  className="slow-fade-in group block w-full cursor-pointer overflow-hidden rounded-2xl border border-border/40 text-left transition-all hover:border-primary/45"
                   style={{
                     animationDelay: `${i * 90}ms`,
                     background:
@@ -124,9 +147,20 @@ function TemplePage() {
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {savedKits.map((k) => (
-                          <span
+                          <button
                             key={k.key}
-                            className="rounded-full border px-2.5 py-1 font-serif-sc text-[11px] tracking-[0.18em] text-ivory/80"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenKit({
+                                entryId: e.id,
+                                entryQuestion: e.question,
+                                kitKey: k.key,
+                                kitLabel: k.label ?? k.kit_title ?? k.key,
+                                kit: k,
+                              });
+                            }}
+                            className="rounded-full border px-2.5 py-1 font-serif-sc text-[11px] tracking-[0.18em] text-ivory/80 transition-all hover:border-primary/60 hover:text-ivory"
                             style={{
                               borderColor: "oklch(0.74 0.13 55 / 0.28)",
                               background:
@@ -134,12 +168,12 @@ function TemplePage() {
                             }}
                           >
                             {k.label}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -154,6 +188,83 @@ function TemplePage() {
           </Link>
         )}
       </main>
+
+      {openKit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          onClick={() => setOpenKit(null)}
+          style={{
+            background: "oklch(0 0 0 / 0.7)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            className="relative z-10 w-full max-w-[360px] rounded-[28px] border px-7 py-8 text-center shadow-2xl slow-fade-in"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              borderColor: "oklch(0.74 0.13 55 / 0.24)",
+              background:
+                "radial-gradient(circle at 50% 0%, oklch(0.74 0.13 55 / 0.12), transparent 42%), linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.14 0.012 50) 100%)",
+              boxShadow:
+                "0 30px 90px oklch(0 0 0 / 0.55), 0 0 50px oklch(0.74 0.13 55 / 0.12)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setOpenKit(null)}
+              className="absolute right-5 top-4 text-[18px] text-foreground/35 transition hover:text-foreground/70"
+              aria-label="关闭"
+            >
+              ×
+            </button>
+
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+              <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
+                POUCH
+              </span>
+              <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+            </div>
+
+            <p
+              className="mt-4 font-serif-sc text-[15px] tracking-[0.3em] text-ivory/90"
+              style={{ fontWeight: 400 }}
+            >
+              {openKit.kit.label ?? openKit.kit.kit_title ?? openKit.kitLabel}
+            </p>
+
+            {openKit.kit.kit_subtitle && (
+              <p className="mt-3 font-serif-sc text-[12px] tracking-[0.2em] text-primary/70">
+                {openKit.kit.kit_subtitle}
+              </p>
+            )}
+
+            {openKit.kit.kit_content && (
+              <p className="mx-auto mt-7 max-w-[290px] whitespace-pre-line font-serif-sc text-[14px] leading-[2.2] text-ivory/75">
+                {openKit.kit.kit_content}
+              </p>
+            )}
+
+            {openKit.kit.kit_action && (
+              <p className="mx-auto mt-5 max-w-[290px] whitespace-pre-line font-serif-sc text-[13px] leading-[2.1] text-ivory/65">
+                {openKit.kit.kit_action}
+              </p>
+            )}
+
+            {openKit.entryQuestion && (
+              <p className="mx-auto mt-7 max-w-[260px] font-serif-sc text-[10px] leading-[2] text-foreground/35">
+                来自：{openKit.entryQuestion}
+              </p>
+            )}
+
+            {openKit.kit.disclaimer && (
+              <p className="mx-auto mt-4 max-w-[240px] whitespace-pre-line font-serif-sc text-[10px] leading-[2] text-foreground/30">
+                {openKit.kit.disclaimer}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
