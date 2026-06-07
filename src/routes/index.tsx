@@ -26,8 +26,7 @@ function QuestionPage() {
   const inputAnchorRef = useRef<HTMLDivElement>(null);
 
   const startVoice = useCallback(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     const rec = new SpeechRecognition();
@@ -68,10 +67,7 @@ function QuestionPage() {
 
         {/* 上区 */}
         <div className="relative z-10 w-full text-center">
-          <p
-            className="font-serif-display text-[9px] uppercase text-foreground/25"
-            style={{ letterSpacing: "0.65em" }}
-          >
+          <p className="font-serif-display text-[9px] uppercase text-foreground/25" style={{ letterSpacing: "0.65em" }}>
             A Modern Ritual
           </p>
           <h1
@@ -92,24 +88,20 @@ function QuestionPage() {
         </div>
 
         {/* 中区 */}
-        <div
-          ref={inputAnchorRef}
-          className="relative flex w-full flex-col items-center text-center"
-        >
+        <div ref={inputAnchorRef} className="relative flex w-full flex-col items-center text-center">
           <div className="relative z-10 w-[70%]">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="输入你的困惑..."
-              className="w-full border-0 bg-transparent text-center font-serif-sc text-[14px] placeholder:text-[rgba(35,14,7,0.45)] focus:outline-none"
-              style={{ letterSpacing: "0.12em", padding: "8px 0", color: "rgba(35, 14, 7, 0.85)" }}
+              className="w-full border-0 bg-transparent text-center font-serif-sc text-[14px] placeholder:text-white/65 focus:outline-none"
+              style={{ letterSpacing: "0.12em", padding: "8px 0", color: "rgba(255, 255, 255, 0.94)" }}
             />
             <div
               aria-hidden
               className="mx-auto mt-2 h-px w-1/2"
               style={{
-                background:
-                  "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.18), transparent)",
+                background: "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.18), transparent)",
               }}
             />
             <div className="mt-6 flex flex-col items-center gap-1.5">
@@ -117,26 +109,15 @@ function QuestionPage() {
                 onClick={listening ? stopVoice : startVoice}
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 transition-colors hover:border-foreground/25"
                 style={{
-                  boxShadow: listening
-                    ? "0 0 14px oklch(0.75 0.04 80 / 0.15)"
-                    : undefined,
+                  boxShadow: listening ? "0 0 14px oklch(0.75 0.04 80 / 0.15)" : undefined,
                   animation: listening ? "breathe 2s ease-in-out infinite" : undefined,
                 }}
                 aria-label={listening ? "停止语音输入" : "语音输入"}
               >
-                <Mic
-                  size={13}
-                  className={
-                    listening ? "text-foreground/70" : "text-foreground/30"
-                  }
-                  strokeWidth={1.25}
-                />
+                <Mic size={13} className={listening ? "text-foreground/70" : "text-foreground/30"} strokeWidth={1.25} />
               </button>
               {listening && (
-                <span
-                  className="font-serif-sc text-[9px] text-foreground/40"
-                  style={{ letterSpacing: "0.25em" }}
-                >
+                <span className="font-serif-sc text-[9px] text-foreground/40" style={{ letterSpacing: "0.25em" }}>
                   聆听中…
                 </span>
               )}
