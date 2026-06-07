@@ -171,6 +171,26 @@ function InterpretPage() {
     }
   }
 
+  function onSaveKit() {
+    if (!openItem) return;
+    const kit = kitCache[openItem.key];
+    if (!kit) return;
+    const histId = getCurrentHistoryId();
+    if (!histId) return;
+    if (savedKeys.has(openItem.key)) return;
+    saveKitToHistory(histId, openItem.key, {
+      key: openItem.key,
+      label: openItem.label,
+      kit_title: kit.kit_title,
+      kit_subtitle: kit.kit_subtitle,
+      kit_content: kit.kit_content,
+      kit_action: kit.kit_action,
+      disclaimer: kit.disclaimer,
+      savedAt: Date.now(),
+    });
+    setSavedKeys((prev) => new Set(prev).add(openItem.key));
+  }
+
   if (!slip) return null;
 
   const xiang = result?.xiang_content ?? "";
