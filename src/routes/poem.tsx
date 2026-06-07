@@ -44,10 +44,10 @@ function PoemPage() {
       const res = await interpretSlipFn({
         data: {
           user_question: getUserQuestion(),
-          qian_data: slip,
+          qian_data: JSON.stringify(slip),
         },
       });
-      setInterpretation(res?.result ?? {});
+      setInterpretation(res ?? {});
       navigate({ to: "/interpret" });
     } catch (e: any) {
       setLoading(false);
@@ -59,24 +59,31 @@ function PoemPage() {
     <Shell intensity={0.5}>
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-12 pt-4">
         <div
-          className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] border border-border/40 slow-fade-in"
+          className="slow-fade-in w-full"
           style={{
-            boxShadow:
-              "0 30px 80px -20px oklch(0 0 0 / 0.6), 0 0 60px oklch(0.74 0.13 55 / 0.18), inset 0 1px 0 oklch(1 0 0 / 0.05)",
             opacity: revealed ? 1 : 0,
             transform: revealed ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 1.4s ease, transform 1.4s ease",
+            maxWidth: 520,
           }}
         >
           {slip.image_url ? (
             <img
-              src={slip.image_url as string}
+              src={slip.image_url}
               alt="签"
-              className="block h-auto w-full select-none"
+              className="block select-none"
               draggable={false}
+              style={{
+                width: "100%",
+                maxWidth: 520,
+                height: "auto",
+                objectFit: "contain",
+                filter:
+                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+              }}
             />
           ) : (
-            <div className="flex aspect-[2/3] items-center justify-center font-serif-sc text-sm text-foreground/45">
+            <div className="mx-auto flex aspect-[2/3] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
               签面缺失
             </div>
           )}
