@@ -80,6 +80,18 @@ export interface HistoryEntry {
   createdAt: number;
 }
 const HIST_KEY = "oneslip.history.v2";
+const HIST_MIGRATION_KEY = "oneslip.history.migrated.v3";
+
+/** One-time dev migration: clear old history entries that lack interpretation / savedKits.
+ *  Runs only once per browser; future entries are preserved. */
+export function runHistoryMigration() {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(HIST_MIGRATION_KEY)) return; // already migrated
+    localStorage.removeItem(HIST_KEY);
+    localStorage.setItem(HIST_MIGRATION_KEY, "true");
+  } catch {}
+}
 
 export function loadHistory(): HistoryEntry[] {
   return safeGet<HistoryEntry[]>(HIST_KEY) ?? [];
