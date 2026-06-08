@@ -26,8 +26,10 @@ export const Route = createFileRoute("/")({
 
 function QuestionPage() {
   const navigate = useNavigate();
+  const checkSameDay = useServerFn(checkSameDayQuestion);
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
+  const [checking, setChecking] = useState(false);
   const recognitionRef = useRef<any>(null);
   const mainRef = useRef<HTMLElement>(null);
   const inputAnchorRef = useRef<HTMLDivElement>(null);
