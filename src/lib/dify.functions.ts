@@ -218,16 +218,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
   });
 
 // Workflow C: generate all 6 remedy kits in one call
-const REMEDY_KIT_KEYS = [
-  "daily_action",
-  "book",
-  "guardian_color",
-  "amulet",
-  "daily_scent",
-  "lucky_number",
-  "music",
-  "quote",
-] as const;
+const REMEDY_KIT_KEYS = ["daily_action", "book", "guardian_color", "amulet", "daily_scent", "music"] as const;
 
 type RemedyKitKey = (typeof REMEDY_KIT_KEYS)[number];
 
