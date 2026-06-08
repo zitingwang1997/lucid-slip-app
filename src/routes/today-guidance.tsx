@@ -9,7 +9,7 @@ import {
 } from "@/lib/fortune-store";
 
 const searchSchema = z.object({
-  id: z.string(),
+  id: z.string().optional().default(""),
   q: z.string().optional().default(""),
 });
 
@@ -30,6 +30,10 @@ function TodayGuidancePage() {
   const [entry, setEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
+    if (!id) {
+      navigate({ to: "/" });
+      return;
+    }
     const e = getHistoryEntry(id);
     if (!e) {
       navigate({ to: "/" });
