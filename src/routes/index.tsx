@@ -59,11 +59,63 @@ function QuestionPage() {
     setListening(false);
   }, []);
 
-  const proceed = () => {
+  const proceed = async () => {
+    const text = q.trim();
+    if (!text || checking) return;
+
+    // Check today's previously-asked questions for semantic similarity.
+    const today = getTodayHistory();
+    if (today.length > 0) {
+      setChecking(true);
+      try {
+        const result = await checkSameDay({
+          data: {
+            newQuestion: text,
+            today: today.map((e) => ({
+              id: e.id,
+              question: e.question,
+              intent: e.intent,
+              category: e.category,
+            })),
+          },
+        });
+        if (result.matchedId) {
+          // Same-day duplicate intent — do NOT draw a new slip.
+          navigate({
+            to: "/today-guidance",
+            search: { id: result.matchedId, q: text },
+          });
+          return;
+        }
+        // No match: continue, and stamp intent/category on the new entry
+        // we are about to create in /draw by stashing it via a one-shot key.
+        clearRitualSession();
+        setUserQuestion(text);
+        // Save intent/category onto the most recent entry once /draw creates it.
+        // We do this lazily: store the latest classification on sessionStorage
+        // so /draw can copy it onto the new HistoryEntry it pushes.
+        try {
+          sessionStorage.setItem(
+            "oneslip.pendingClassification.v1",
+            JSON.stringify({ intent: result.intent, category: result.category }),
+          );
+        } catch {}
+        navigate({ to: "/draw" });
+        return;
+      } catch (err) {
+        console.warn("[index] similarity check failed", err);
+        // Fall through to normal flow on error.
+      } finally {
+        setChecking(false);
+      }
+    }
+
     clearRitualSession();
-    setUserQuestion(q.trim());
+    setUserQuestion(text);
     navigate({ to: "/draw" });
   };
+  // Silence unused-import warning when no today entries: updateHistoryEntry used in /draw
+  void updateHistoryEntry;
 
   return (
     <Shell intensity={0} overlayHeader>
