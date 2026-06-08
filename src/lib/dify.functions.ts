@@ -107,7 +107,21 @@ export const interpretSlip = createServerFn({ method: "POST" })
     );
     const o: any = outputs ?? {};
 
-    // Workflow B returns a single `result` string containing JSON.
+    // New Workflow B output: Dify now returns structured fields directly.
+    if (o.xiang_content || o.yi_content || o.xing_content) {
+      return {
+        slip: undefined,
+        xiang_title: "典故",
+        xiang_content: String(o.xiang_content ?? ""),
+        yi_title: "签意",
+        yi_content: String(o.yi_content ?? ""),
+        xing_title: "化解之道",
+        xing_content: String(o.xing_content ?? ""),
+        disclaimer: String(o.disclaimer ?? "我不能替你决定命运，但我可以陪你看清此刻。"),
+      };
+    }
+
+    // Workflow B fallback: old workflow returns a single `result` string containing JSON.
     let parsed: any = null;
     const rawResult = o.result ?? o.output ?? o.text;
     if (typeof rawResult === "string") {
