@@ -88,10 +88,28 @@ export interface SavedKit {
 export interface HistoryEntry {
   id: string;
   question: string;
+  /** Normalized intent summary derived from the question. */
+  intent?: string;
+  /** Coarse category (e.g. relationship, career, health, decision, other). */
+  category?: string;
   slip: SelectedSlip;
   interpretation?: InterpretationResult;
   savedKits?: Record<string, SavedKit>;
   createdAt: number;
+}
+
+function isSameLocalDay(a: number, b: number) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
+export function getTodayHistory(now: number = Date.now()): HistoryEntry[] {
+  return loadHistory().filter((e) => isSameLocalDay(e.createdAt, now));
 }
 
 const HIST_KEY = "oneslip.history.v2";
