@@ -28,6 +28,8 @@ const guidanceItems = [
   { key: "amulet", label: "护身物" },
   { key: "daily_scent", label: "今日香气" },
   { key: "lucky_number", label: "幸运数字" },
+  { key: "music", label: "今日乐曲" },
+  { key: "quote", label: "今日一句" },
 ] as const;
 
 type KitKey = (typeof guidanceItems)[number]["key"];
@@ -196,8 +198,7 @@ function InterpretPage() {
   const xiang = result?.xiang_content ?? "";
   const yi = result?.yi_content ?? "";
   const xing = result?.xing_content ?? "";
-  const disclaimer =
-    result?.disclaimer ?? "我不能替你决定命运，\n但我可以陪你看清此刻。";
+  const disclaimer = result?.disclaimer ?? "我不能替你决定命运，\n但我可以陪你看清此刻。";
 
   const kitResult = openItem ? kitCache[openItem.key] : undefined;
 
@@ -242,9 +243,7 @@ function InterpretPage() {
         </Section>
 
         <Section eyebrow="解惑锦囊" title="解惑锦囊" delay={800}>
-          <p className="-mt-3 mb-6 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">
-            从签中取一味解药
-          </p>
+          <p className="-mt-3 mb-6 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">从签中取一味解药</p>
           <div className="flex flex-wrap gap-2.5">
             {guidanceItems.map((r, i) => (
               <button
@@ -253,10 +252,8 @@ function InterpretPage() {
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                  background:
-                    "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
-                  boxShadow:
-                    "0 0 18px oklch(0.74 0.13 55 / 0.10), inset 0 1px 0 oklch(1 0 0 / 0.05)",
+                  background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                  boxShadow: "0 0 18px oklch(0.74 0.13 55 / 0.10), inset 0 1px 0 oklch(1 0 0 / 0.05)",
                   animationDelay: `${900 + i * 90}ms`,
                 }}
               >
@@ -286,8 +283,7 @@ function InterpretPage() {
         <DrawerContent
           className="border-border/50 px-6 pb-12 pt-2"
           style={{
-            background:
-              "linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.16 0.012 50) 100%)",
+            background: "linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.16 0.012 50) 100%)",
             boxShadow: "0 -30px 80px -20px oklch(0.74 0.13 55 / 0.18)",
           }}
         >
@@ -296,9 +292,7 @@ function InterpretPage() {
               <DrawerTitle className="sr-only">{openItem.label}</DrawerTitle>
               <div className="mt-4 flex items-center justify-center gap-3">
                 <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
-                <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
-                  Pouch
-                </span>
+                <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">Pouch</span>
                 <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
               </div>
               <p
@@ -318,10 +312,7 @@ function InterpretPage() {
                   {kitResult.kit_content && (
                     <div className="space-y-3">
                       {kitResult.kit_content.split(/\n+/).map((p, i) => (
-                        <p
-                          key={i}
-                          className="font-serif-sc text-[14px] leading-[2] text-ivory/80"
-                        >
+                        <p key={i} className="font-serif-sc text-[14px] leading-[2] text-ivory/80">
                           {p}
                         </p>
                       ))}
@@ -332,8 +323,7 @@ function InterpretPage() {
                       className="rounded-2xl border px-5 py-4"
                       style={{
                         borderColor: "oklch(0.74 0.13 55 / 0.28)",
-                        background:
-                          "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
+                        background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
                       }}
                     >
                       <p className="mb-2 text-center font-serif-sc text-[11px] tracking-[0.4em] uppercase text-primary/70">
@@ -363,8 +353,7 @@ function InterpretPage() {
                         className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/90 transition-all hover:text-ivory"
                         style={{
                           borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                          background:
-                            "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                          background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
                         }}
                       >
                         收 入 心 庙
@@ -391,8 +380,7 @@ function InterpretPage() {
                     className="rounded-full border px-5 py-2 font-serif-sc text-[12px] tracking-[0.3em] text-ivory/90 transition-all hover:text-ivory"
                     style={{
                       borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                      background:
-                        "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                      background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
                     }}
                   >
                     重新求取
@@ -428,10 +416,7 @@ function Section({
         <span className="text-[10px] tracking-[0.4em] text-primary/70">{eyebrow}</span>
         <span className="h-px flex-1 bg-border/60" />
       </div>
-      <h2
-        className="mb-4 font-serif-sc text-lg tracking-[0.3em] text-ivory"
-        style={{ fontWeight: 400 }}
-      >
+      <h2 className="mb-4 font-serif-sc text-lg tracking-[0.3em] text-ivory" style={{ fontWeight: 400 }}>
         {title}
       </h2>
       {children}
@@ -441,9 +426,7 @@ function Section({
 
 function ReadingBody({ text, placeholder }: { text: string; placeholder: string }) {
   if (!text) {
-    return (
-      <p className="font-serif-sc text-[13px] leading-[2] text-foreground/40">{placeholder}</p>
-    );
+    return <p className="font-serif-sc text-[13px] leading-[2] text-foreground/40">{placeholder}</p>;
   }
   return (
     <div className="space-y-3">
