@@ -24,6 +24,7 @@ function TodayGuidancePage() {
   const navigate = useNavigate();
   const { id, q } = Route.useSearch();
   const [entry, setEntry] = useState<HistoryEntry | null>(null);
+  const [showNextStep, setShowNextStep] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -47,6 +48,21 @@ function TodayGuidancePage() {
   };
 
   const askDifferent = () => navigate({ to: "/" });
+  const dailyActionKit = entry.savedKits?.daily_action;
+  const xingContent = entry.interpretation?.xing_content ?? "";
+  const xingTitle = entry.interpretation?.xing_title || "行";
+
+  const hasNextStepContent = Boolean(dailyActionKit || xingContent.trim());
+
+  const openNextStep = () => {
+    if (hasNextStepContent) {
+      setShowNextStep(true);
+      return;
+    }
+
+    restoreHistoryEntry(entry.id);
+    navigate({ to: "/interpret" });
+  };
 
   return (
     <Shell intensity={0.35} showTemple={false}>
@@ -112,7 +128,7 @@ function TodayGuidancePage() {
         <section className="slow-fade-in mt-10 flex flex-col items-center gap-3" style={{ animationDelay: "400ms" }}>
           <GuidanceAction onClick={goToSlip}>回看今日之签</GuidanceAction>
 
-          <GuidanceAction onClick={goToSlip}>给我一个可行的下一步</GuidanceAction>
+          <GuidanceAction onClick={openNextStep}>给我一个可行的下一步</GuidanceAction>
           <button
             onClick={askDifferent}
             className="mt-3 text-[10px] tracking-[0.45em] uppercase text-foreground/40 hover:text-foreground/75"
@@ -121,6 +137,109 @@ function TodayGuidancePage() {
           </button>
         </section>
       </main>
+
+      {showNextStep && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-7"
+          style={{
+            background: "oklch(0.08 0.01 45 / 0.72)",
+            backdropFilter: "blur(16px)",
+          }}
+          onClick={() => setShowNextStep(false)}
+        >
+          <div
+            className="slow-fade-in relative w-full max-w-[340px] rounded-[28px] border px-7 py-8 text-center"
+            style={{
+              borderColor: "oklch(0.74 0.13 55 / 0.28)",
+              background: "linear-gradient(180deg, oklch(0.22 0.018 55 / 0.96), oklch(0.14 0.012 50 / 0.98))",
+              boxShadow: "0 30px 90px oklch(0 0 0 / 0.45), 0 0 60px oklch(0.74 0.13 55 / 0.12)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowNextStep(false)}
+              className="absolute right-5 top-4 text-[18px] leading-none text-foreground/35 hover:text-ivory/80"
+              aria-label="关闭"
+            >
+              ×
+            </button>
+
+            <div className="mb-5 flex items-center justify-center gap-3">
+              <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+              <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">Next</span>
+              <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+            </div>
+
+            {dailyActionKit ? (
+              <>
+                <p className="font-serif-sc text-[15px] tracking-[0.32em] text-ivory/95">
+                  {dailyActionKit.kit_title || "今日行动"}
+                </p>
+
+                {dailyActionKit.kit_subtitle && (
+                  <p className="mt-4 font-serif-sc text-[12px] leading-[2] tracking-[0.22em] text-primary/70">
+                    {dailyActionKit.kit_subtitle}
+                  </p>
+                )}
+
+                {dailyActionKit.kit_content && (
+                  <div className="mt-6 space-y-3 text-left">
+                    {dailyActionKit.kit_content.split(/\n+/).map((p, i) => (
+                      <p key={i} className="font-serif-sc text-[13px] leading-[2] tracking-[0.08em] text-ivory/75">
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {dailyActionKit.kit_action && (
+                  <div
+                    className="mt-6 rounded-2xl border px-5 py-4"
+                    style={{
+                      borderColor: "oklch(0.74 0.13 55 / 0.25)",
+                      background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
+                    }}
+                  >
+                    <p className="mb-2 font-serif-sc text-[10px] tracking-[0.4em] uppercase text-primary/70">下一步</p>
+                    <p className="font-serif-sc text-[14px] leading-[2] tracking-[0.08em] text-ivory/90">
+                      {dailyActionKit.kit_action}
+                    </p>
+                  </div>
+                )}
+
+                {dailyActionKit.disclaimer && (
+                  <p className="mx-auto mt-5 max-w-[260px] whitespace-pre-line font-serif-sc text-[10px] leading-[2] text-foreground/35">
+                    {dailyActionKit.disclaimer}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="font-serif-sc text-[15px] tracking-[0.32em] text-ivory/95">{xingTitle}</p>
+
+                <div className="mt-6 space-y-3 text-left">
+                  {xingContent.split(/\n+/).map((p, i) => (
+                    <p key={i} className="font-serif-sc text-[14px] leading-[2.1] tracking-[0.08em] text-ivory/80">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+
+                <button
+                  onClick={goToSlip}
+                  className="mt-7 rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.32em] text-ivory/80 transition-all hover:text-ivory"
+                  style={{
+                    borderColor: "oklch(0.74 0.13 55 / 0.24)",
+                    background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
+                  }}
+                >
+                  查看完整解签
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
