@@ -229,7 +229,7 @@ function InterpretPage() {
           </div>
         </section>
 
-        <Section eyebrow="01" title={result?.xiang_title || "象"} delay={200}>
+        <Section eyebrow="象" title={result?.xiang_title || "象"} delay={200}>
           <ReadingBody text={xiang} placeholder="象意正在显现…" />
         </Section>
 
