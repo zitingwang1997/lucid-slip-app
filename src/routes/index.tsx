@@ -113,8 +113,6 @@ function QuestionPage() {
     setUserQuestion(text);
     navigate({ to: "/draw" });
   };
-  // Silence unused-import warning when no today entries: updateHistoryEntry used in /draw
-  void updateHistoryEntry;
 
   return (
     <Shell intensity={0} overlayHeader>
