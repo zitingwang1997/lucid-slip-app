@@ -9,7 +9,7 @@ import {
 } from "@/lib/fortune-store";
 
 const searchSchema = z.object({
-  id: z.string(),
+  id: z.string().optional().default(""),
   q: z.string().optional().default(""),
 });
 
