@@ -2,11 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Shell } from "@/components/Shell";
-import {
-  getHistoryEntry,
-  restoreHistoryEntry,
-  type HistoryEntry,
-} from "@/lib/fortune-store";
+import { getHistoryEntry, restoreHistoryEntry, type HistoryEntry } from "@/lib/fortune-store";
 
 const searchSchema = z.object({
   id: z.string().optional().default(""),
@@ -56,9 +52,7 @@ function TodayGuidancePage() {
     <Shell intensity={0.35} showTemple={false}>
       <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-between px-7 pb-16 pt-10">
         <header className="slow-fade-in text-center">
-          <p className="text-[10px] tracking-[0.55em] uppercase text-foreground/35">
-            Today · One Question
-          </p>
+          <p className="text-[10px] tracking-[0.55em] uppercase text-foreground/35">Today · One Question</p>
           <h1
             className="mt-6 font-serif-sc text-ivory/95"
             style={{
@@ -77,19 +71,16 @@ function TodayGuidancePage() {
             aria-hidden
             className="mx-auto mt-7 h-px w-24"
             style={{
-              background:
-                "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.28), transparent)",
+              background: "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.28), transparent)",
             }}
           />
         </header>
 
-        <section
-          className="slow-fade-in mt-10 space-y-7 text-center"
-          style={{ animationDelay: "200ms" }}
-        >
+        <section className="slow-fade-in mt-10 space-y-7 text-center" style={{ animationDelay: "200ms" }}>
           {q && q !== entry.question && (
             <p className="font-serif-sc text-[12px] leading-[2] tracking-[0.18em] text-foreground/45">
-              你方才写下：<br />
+              你方才写下：
+              <br />
               <span className="text-ivory/75">「{q}」</span>
             </p>
           )}
@@ -98,13 +89,10 @@ function TodayGuidancePage() {
             className="mx-auto max-w-[320px] rounded-2xl border px-6 py-5"
             style={{
               borderColor: "oklch(0.74 0.13 55 / 0.22)",
-              background:
-                "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.06), oklch(0.22 0.014 55 / 0.35))",
+              background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.06), oklch(0.22 0.014 55 / 0.35))",
             }}
           >
-            <p className="text-[10px] tracking-[0.45em] uppercase text-primary/70">
-              {formatDate(entry.createdAt)}
-            </p>
+            <p className="text-[10px] tracking-[0.45em] uppercase text-primary/70">{formatDate(entry.createdAt)}</p>
             <p className="mt-3 font-serif-sc text-[14px] leading-[2] tracking-[0.16em] text-ivory/90">
               「{entry.question}」
             </p>
@@ -121,12 +109,9 @@ function TodayGuidancePage() {
           </p>
         </section>
 
-        <section
-          className="slow-fade-in mt-10 flex flex-col items-center gap-3"
-          style={{ animationDelay: "400ms" }}
-        >
+        <section className="slow-fade-in mt-10 flex flex-col items-center gap-3" style={{ animationDelay: "400ms" }}>
           <GuidanceAction onClick={goToSlip}>回看今日之签</GuidanceAction>
-          <GuidanceAction onClick={goToSlip}>换一个角度看此签</GuidanceAction>
+
           <GuidanceAction onClick={goToSlip}>给我一个可行的下一步</GuidanceAction>
           <button
             onClick={askDifferent}
@@ -140,21 +125,14 @@ function TodayGuidancePage() {
   );
 }
 
-function GuidanceAction({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function GuidanceAction({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
       className="w-full max-w-[280px] rounded-full border px-6 py-2.5 font-serif-sc text-[13px] tracking-[0.32em] text-ivory/90 transition-all hover:text-ivory"
       style={{
         borderColor: "oklch(0.74 0.13 55 / 0.28)",
-        background:
-          "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.4))",
+        background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.4))",
         boxShadow: "0 0 18px oklch(0.74 0.13 55 / 0.08)",
       }}
     >
