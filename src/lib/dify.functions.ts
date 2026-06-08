@@ -175,7 +175,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
     const normalized = {
       slip: parsed?.slip ?? o.slip ?? undefined,
       xiang_title:
-        pickTitle(reading, "", ...xiangKeys) || pickTitle(parsed, "", ...xiangKeys) || parsed?.xiang_title || "典故",
+        pickTitle(reading, "", ...xiangKeys) || pickTitle(parsed, "", ...xiangKeys) || parsed?.xiang_title || "象",
       xiang_content:
         pickContent(reading, ...xiangKeys) ||
         pickContent(parsed, ...xiangKeys) ||
