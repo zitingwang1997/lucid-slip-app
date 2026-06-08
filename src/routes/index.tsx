@@ -7,7 +7,6 @@ import {
   clearRitualSession,
   getTodayHistory,
   setUserQuestion,
-  updateHistoryEntry,
 } from "@/lib/fortune-store";
 import { checkSameDayQuestion } from "@/lib/similarity.functions";
 import { Mic } from "lucide-react";
