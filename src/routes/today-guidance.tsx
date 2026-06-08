@@ -30,6 +30,10 @@ function TodayGuidancePage() {
   const [entry, setEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
+    if (!id) {
+      navigate({ to: "/" });
+      return;
+    }
     const e = getHistoryEntry(id);
     if (!e) {
       navigate({ to: "/" });
