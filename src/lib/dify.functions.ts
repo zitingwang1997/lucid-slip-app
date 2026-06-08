@@ -175,7 +175,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
     const normalized = {
       slip: parsed?.slip ?? o.slip ?? undefined,
       xiang_title:
-        pickTitle(reading, "", ...xiangKeys) || pickTitle(parsed, "", ...xiangKeys) || parsed?.xiang_title || "象",
+        pickTitle(reading, "", ...xiangKeys) || pickTitle(parsed, "", ...xiangKeys) || parsed?.xiang_title || "典故",
       xiang_content:
         pickContent(reading, ...xiangKeys) ||
         pickContent(parsed, ...xiangKeys) ||
@@ -204,14 +204,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
   });
 
 // Workflow C: generate all 6 remedy kits in one call
-const REMEDY_KIT_KEYS = [
-  "daily_action",
-  "book",
-  "guardian_color",
-  "amulet",
-  "daily_scent",
-  "lucky_number",
-] as const;
+const REMEDY_KIT_KEYS = ["daily_action", "book", "guardian_color", "amulet", "daily_scent", "lucky_number"] as const;
 
 type RemedyKitKey = (typeof REMEDY_KIT_KEYS)[number];
 
@@ -235,9 +228,7 @@ function normalizeKit(raw: any): RemedyKit {
 }
 
 export const getRemedyKits = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { user_question: string; qian_data: string; interpretation: string }) => data,
-  )
+  .inputValidator((data: { user_question: string; qian_data: string; interpretation: string }) => data)
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_REMEDY_API_KEY;
     if (!apiKey) throw new Error("DIFY_REMEDY_API_KEY missing");
@@ -250,12 +241,9 @@ export const getRemedyKits = createServerFn({ method: "POST" })
           apiKey,
           {
             user_question: data.user_question ?? "",
-            qian_data:
-              typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
+            qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
             interpretation:
-              typeof data.interpretation === "string"
-                ? data.interpretation
-                : JSON.stringify(data.interpretation ?? {}),
+              typeof data.interpretation === "string" ? data.interpretation : JSON.stringify(data.interpretation ?? {}),
           },
           "remedy",
         );
@@ -280,7 +268,10 @@ export const getRemedyKits = createServerFn({ method: "POST" })
 
     if (typeof kitsRaw === "string") {
       let s = kitsRaw.trim();
-      s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      s = s
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
       const first = s.indexOf("{");
       const last = s.lastIndexOf("}");
       if (first !== -1 && last !== -1 && last > first) s = s.slice(first, last + 1);
