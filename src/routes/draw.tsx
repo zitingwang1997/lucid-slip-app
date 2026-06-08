@@ -38,45 +38,7 @@ function DrawPage() {
         navigate({ to: "/" });
         return;
       }
-
-      // Stable per-browser anonymous id so Dify can scope same-day history.
-      let userId = "anonymous";
-      try {
-        const KEY = "oneslip.userId.v1";
-        let v = localStorage.getItem(KEY);
-        if (!v) {
-          v = crypto.randomUUID();
-          localStorage.setItem(KEY, v);
-        }
-        userId = v;
-      } catch {}
-      const localDate = new Date().toLocaleDateString("en-CA");
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      const res = await drawSlipFn({
-        data: {
-          user_question: question.trim(),
-          user_id: userId,
-          local_date: localDate,
-          timezone,
-        },
-      });
-
-      // Dify decides: same_day_guidance vs new_slip.
-      if ((res as any)?.type === "same_day_guidance") {
-        try {
-          sessionStorage.setItem(
-            "oneslip.todayGuidance.v1",
-            JSON.stringify({
-              question: question.trim(),
-              guidance: (res as any).guidance ?? {},
-            }),
-          );
-        } catch {}
-        navigate({ to: "/today-guidance" });
-        return;
-      }
-
+      const res = await drawSlipFn({ data: { user_question: question.trim() } });
       const maybeSlip = ((res as any)?.slip ?? res) as SelectedSlip | undefined;
       const isValid =
         maybeSlip &&
@@ -91,9 +53,24 @@ function DrawPage() {
       const slip = maybeSlip as SelectedSlip;
       setSelectedSlip(slip);
       const historyId = crypto.randomUUID();
+      let intent: string | undefined;
+      let category: string | undefined;
+      try {
+        const raw = sessionStorage.getItem("oneslip.pendingClassification.v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            intent = typeof parsed.intent === "string" ? parsed.intent : undefined;
+            category = typeof parsed.category === "string" ? parsed.category : undefined;
+          }
+          sessionStorage.removeItem("oneslip.pendingClassification.v1");
+        }
+      } catch {}
       pushHistory({
         id: historyId,
         question: question.trim(),
+        intent,
+        category,
         slip,
         createdAt: Date.now(),
         savedKits: {},

@@ -1,15 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { Shell } from "@/components/Shell";
-import { clearRitualSession, setUserQuestion } from "@/lib/fortune-store";
+import {
+  clearRitualSession,
+  getTodayHistory,
+  setUserQuestion,
+} from "@/lib/fortune-store";
+import { checkSameDayQuestion } from "@/lib/similarity.functions";
 import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "一签 OneSlip — 一个安静的现代仪式" },
-      { name: "description", content: "提一个问题,求一支签,与AI一同安静地解签。" },
+      { name: "description", content: "提一个问题，求一支签，与AI一同安静地解签。" },
       { property: "og:title", content: "一签 OneSlip" },
       { property: "og:description", content: "现代心灵仪式 · 提问 · 求签 · 解签" },
     ],
@@ -19,8 +25,10 @@ export const Route = createFileRoute("/")({
 
 function QuestionPage() {
   const navigate = useNavigate();
+  const checkSameDay = useServerFn(checkSameDayQuestion);
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
+  const [checking, setChecking] = useState(false);
   const recognitionRef = useRef<any>(null);
   const mainRef = useRef<HTMLElement>(null);
   const inputAnchorRef = useRef<HTMLDivElement>(null);
@@ -50,16 +58,61 @@ function QuestionPage() {
     setListening(false);
   }, []);
 
-  const proceed = () => {
+  const proceed = async () => {
     const text = q.trim();
-    if (!text) return;
-    // Dify Workflow A is the single source of truth for same-day gating.
-    // Frontend just hands the question off to /draw.
+    if (!text || checking) return;
+
+    // Check today's previously-asked questions for semantic similarity.
+    const today = getTodayHistory();
+    if (today.length > 0) {
+      setChecking(true);
+      try {
+        const result = await checkSameDay({
+          data: {
+            newQuestion: text,
+            today: today.map((e) => ({
+              id: e.id,
+              question: e.question,
+              intent: e.intent,
+              category: e.category,
+            })),
+          },
+        });
+        if (result.matchedId) {
+          // Same-day duplicate intent — do NOT draw a new slip.
+          navigate({
+            to: "/today-guidance",
+            search: { id: result.matchedId, q: text },
+          });
+          return;
+        }
+        // No match: continue, and stamp intent/category on the new entry
+        // we are about to create in /draw by stashing it via a one-shot key.
+        clearRitualSession();
+        setUserQuestion(text);
+        // Save intent/category onto the most recent entry once /draw creates it.
+        // We do this lazily: store the latest classification on sessionStorage
+        // so /draw can copy it onto the new HistoryEntry it pushes.
+        try {
+          sessionStorage.setItem(
+            "oneslip.pendingClassification.v1",
+            JSON.stringify({ intent: result.intent, category: result.category }),
+          );
+        } catch {}
+        navigate({ to: "/draw" });
+        return;
+      } catch (err) {
+        console.warn("[index] similarity check failed", err);
+        // Fall through to normal flow on error.
+      } finally {
+        setChecking(false);
+      }
+    }
+
     clearRitualSession();
     setUserQuestion(text);
     navigate({ to: "/draw" });
   };
-
 
   return (
     <Shell intensity={0} overlayHeader>
@@ -141,7 +194,7 @@ function QuestionPage() {
         <div className="relative z-10 flex justify-center" style={{ marginBottom: "8vh" }}>
           <button
             onClick={proceed}
-            disabled={!q.trim()}
+            disabled={checking || !q.trim()}
             className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory disabled:opacity-60"
             style={{
               letterSpacing: "0.48em",
@@ -149,7 +202,7 @@ function QuestionPage() {
               boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
             }}
           >
-            求一支签
+            {checking ? "静观片刻…" : "求一支签"}
           </button>
         </div>
       </main>

@@ -1,71 +1,52 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { Shell } from "@/components/Shell";
+import {
+  getHistoryEntry,
+  restoreHistoryEntry,
+  type HistoryEntry,
+} from "@/lib/fortune-store";
 
-interface GuidancePayload {
-  question: string;
-  guidance: {
-    /** Echo of the original question that was matched. */
-    previous_question?: string;
-    /** Date the previous question was asked (display only). */
-    previous_date?: string;
-    /** Optional slip preview from the matched entry. */
-    slip?: {
-      number?: string | number;
-      title?: string;
-      poem?: string;
-    };
-    /** Main reflective message rendered as the centerpiece. */
-    message?: string;
-    /** Optional suggested actions; falls back to defaults. */
-    actions?: Array<{ label: string; kind?: "primary" | "subtle" }>;
-    [key: string]: unknown;
-  };
-}
+const searchSchema = z.object({
+  id: z.string(),
+  q: z.string().optional().default(""),
+});
 
 export const Route = createFileRoute("/today-guidance")({
   head: () => ({ meta: [{ title: "今日此问 · 一签" }] }),
+  validateSearch: (s) => searchSchema.parse(s),
   component: TodayGuidancePage,
 });
 
+function formatDate(ts: number) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 function TodayGuidancePage() {
   const navigate = useNavigate();
-  const [payload, setPayload] = useState<GuidancePayload | null>(null);
+  const { id, q } = Route.useSearch();
+  const [entry, setEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("oneslip.todayGuidance.v1");
-      if (!raw) {
-        navigate({ to: "/" });
-        return;
-      }
-      setPayload(JSON.parse(raw));
-    } catch {
+    const e = getHistoryEntry(id);
+    if (!e) {
       navigate({ to: "/" });
+      return;
     }
-  }, [navigate]);
+    setEntry(e);
+  }, [id, navigate]);
 
-  if (!payload) return null;
+  if (!entry) return null;
 
-  const g = payload.guidance ?? {};
-  const askDifferent = () => {
-    try {
-      sessionStorage.removeItem("oneslip.todayGuidance.v1");
-    } catch {}
-    navigate({ to: "/" });
+  const goToSlip = () => {
+    restoreHistoryEntry(entry.id);
+    if (entry.interpretation) navigate({ to: "/interpret" });
+    else navigate({ to: "/poem" });
   };
 
-  const defaultMessage =
-    "有些困惑，不适合反复追问。\n今日的签意已经给出，\n不妨先带着它走一段路。\n反复求问，也许不是为了得到新的答案，\n而是为了安放心里的不安。";
-
-  const actions =
-    g.actions && g.actions.length > 0
-      ? g.actions
-      : [
-          { label: "回看今日之签" },
-          { label: "换一个角度看此签" },
-          { label: "给我一个可行的下一步" },
-        ];
+  const askDifferent = () => navigate({ to: "/" });
 
   return (
     <Shell intensity={0.35} showTemple={false}>
@@ -102,44 +83,37 @@ function TodayGuidancePage() {
           className="slow-fade-in mt-10 space-y-7 text-center"
           style={{ animationDelay: "200ms" }}
         >
-          {payload.question && g.previous_question && payload.question !== g.previous_question && (
+          {q && q !== entry.question && (
             <p className="font-serif-sc text-[12px] leading-[2] tracking-[0.18em] text-foreground/45">
-              你方才写下：
-              <br />
-              <span className="text-ivory/75">「{payload.question}」</span>
+              你方才写下：<br />
+              <span className="text-ivory/75">「{q}」</span>
             </p>
           )}
 
-          {(g.previous_question || g.slip?.title) && (
-            <div
-              className="mx-auto max-w-[320px] rounded-2xl border px-6 py-5"
-              style={{
-                borderColor: "oklch(0.74 0.13 55 / 0.22)",
-                background:
-                  "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.06), oklch(0.22 0.014 55 / 0.35))",
-              }}
-            >
-              {g.previous_date && (
-                <p className="text-[10px] tracking-[0.45em] uppercase text-primary/70">
-                  {g.previous_date}
-                </p>
-              )}
-              {g.previous_question && (
-                <p className="mt-3 font-serif-sc text-[14px] leading-[2] tracking-[0.16em] text-ivory/90">
-                  「{g.previous_question}」
-                </p>
-              )}
-              {g.slip?.title && (
-                <p className="mt-4 font-serif-sc text-[12px] tracking-[0.3em] text-primary/75">
-                  {g.slip.number ? `第 ${g.slip.number} 签 · ` : ""}
-                  {g.slip.title}
-                </p>
-              )}
-            </div>
-          )}
+          <div
+            className="mx-auto max-w-[320px] rounded-2xl border px-6 py-5"
+            style={{
+              borderColor: "oklch(0.74 0.13 55 / 0.22)",
+              background:
+                "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.06), oklch(0.22 0.014 55 / 0.35))",
+            }}
+          >
+            <p className="text-[10px] tracking-[0.45em] uppercase text-primary/70">
+              {formatDate(entry.createdAt)}
+            </p>
+            <p className="mt-3 font-serif-sc text-[14px] leading-[2] tracking-[0.16em] text-ivory/90">
+              「{entry.question}」
+            </p>
+            {entry.slip?.title && (
+              <p className="mt-4 font-serif-sc text-[12px] tracking-[0.3em] text-primary/75">
+                {entry.slip.number ? `第 ${entry.slip.number} 签 · ` : ""}
+                {entry.slip.title}
+              </p>
+            )}
+          </div>
 
           <p className="mx-auto max-w-[300px] whitespace-pre-line font-serif-sc text-[13px] leading-[2.2] text-foreground/55">
-            {g.message || defaultMessage}
+            {`有些困惑，不适合反复追问。\n今日的签意已经给出，\n不妨先带着它走一段路。\n反复求问，也许不是为了得到新的答案，\n而是为了安放心里的不安。`}
           </p>
         </section>
 
@@ -147,11 +121,9 @@ function TodayGuidancePage() {
           className="slow-fade-in mt-10 flex flex-col items-center gap-3"
           style={{ animationDelay: "400ms" }}
         >
-          {actions.map((a, i) => (
-            <GuidanceAction key={i} onClick={askDifferent}>
-              {a.label}
-            </GuidanceAction>
-          ))}
+          <GuidanceAction onClick={goToSlip}>回看今日之签</GuidanceAction>
+          <GuidanceAction onClick={goToSlip}>换一个角度看此签</GuidanceAction>
+          <GuidanceAction onClick={goToSlip}>给我一个可行的下一步</GuidanceAction>
           <button
             onClick={askDifferent}
             className="mt-3 text-[10px] tracking-[0.45em] uppercase text-foreground/40 hover:text-foreground/75"
