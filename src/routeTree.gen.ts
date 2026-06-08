@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TodayGuidanceRouteImport } from './routes/today-guidance'
 import { Route as TempleRouteImport } from './routes/temple'
 import { Route as PoemRouteImport } from './routes/poem'
 import { Route as InterpretRouteImport } from './routes/interpret'
 import { Route as DrawRouteImport } from './routes/draw'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TodayGuidanceRoute = TodayGuidanceRouteImport.update({
+  id: '/today-guidance',
+  path: '/today-guidance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TempleRoute = TempleRouteImport.update({
   id: '/temple',
   path: '/temple',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
+  '/today-guidance': typeof TodayGuidanceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
+  '/today-guidance': typeof TodayGuidanceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,27 @@ export interface FileRoutesById {
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
+  '/today-guidance': typeof TodayGuidanceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/draw' | '/interpret' | '/poem' | '/temple'
+  fullPaths:
+    | '/'
+    | '/draw'
+    | '/interpret'
+    | '/poem'
+    | '/temple'
+    | '/today-guidance'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/draw' | '/interpret' | '/poem' | '/temple'
-  id: '__root__' | '/' | '/draw' | '/interpret' | '/poem' | '/temple'
+  to: '/' | '/draw' | '/interpret' | '/poem' | '/temple' | '/today-guidance'
+  id:
+    | '__root__'
+    | '/'
+    | '/draw'
+    | '/interpret'
+    | '/poem'
+    | '/temple'
+    | '/today-guidance'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,10 +99,18 @@ export interface RootRouteChildren {
   InterpretRoute: typeof InterpretRoute
   PoemRoute: typeof PoemRoute
   TempleRoute: typeof TempleRoute
+  TodayGuidanceRoute: typeof TodayGuidanceRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/today-guidance': {
+      id: '/today-guidance'
+      path: '/today-guidance'
+      fullPath: '/today-guidance'
+      preLoaderRoute: typeof TodayGuidanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/temple': {
       id: '/temple'
       path: '/temple'
@@ -125,7 +155,18 @@ const rootRouteChildren: RootRouteChildren = {
   InterpretRoute: InterpretRoute,
   PoemRoute: PoemRoute,
   TempleRoute: TempleRoute,
+  TodayGuidanceRoute: TodayGuidanceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
