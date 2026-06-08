@@ -79,16 +79,41 @@ async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>,
   return outputs;
 }
 
-// Workflow A: draw a random fortune slip
+// Workflow A: draw a slip OR return same-day guidance.
+// Dify decides whether the question is a same-day duplicate; the frontend
+// only routes based on `type`.
 export const drawSlip = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question?: string }) => data ?? {})
+  .inputValidator(
+    (data: {
+      user_question?: string;
+      user_id?: string;
+      local_date?: string;
+      timezone?: string;
+    }) => data ?? {},
+  )
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_DRAW_API_KEY;
     if (!apiKey) throw new Error("DIFY_DRAW_API_KEY missing");
-    const outputs = await callDifyWorkflow(apiKey, { user_question: data?.user_question ?? "" }, "draw");
-    const slip = outputs.slip ?? outputs.qian ?? outputs;
-    const user_question = outputs.user_question ?? data?.user_question ?? "";
-    return { user_question, slip };
+    const outputs = await callDifyWorkflow(
+      apiKey,
+      {
+        user_question: data?.user_question ?? "",
+        user_id: data?.user_id ?? "anonymous",
+        local_date: data?.local_date ?? "",
+        timezone: data?.timezone ?? "",
+      },
+      "draw",
+    );
+    const o: any = outputs ?? {};
+    const type: "same_day_guidance" | "new_slip" =
+      o.type === "same_day_guidance" ? "same_day_guidance" : "new_slip";
+    const user_question = o.user_question ?? data?.user_question ?? "";
+    if (type === "same_day_guidance") {
+      // Pass through whatever guidance fields Dify provides.
+      return { type, user_question, guidance: o.guidance ?? o };
+    }
+    const slip = o.slip ?? o.qian ?? o;
+    return { type, user_question, slip };
   });
 
 // Workflow B: interpret a selected slip
