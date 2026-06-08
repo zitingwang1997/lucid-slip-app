@@ -194,14 +194,15 @@ function QuestionPage() {
         <div className="relative z-10 flex justify-center" style={{ marginBottom: "8vh" }}>
           <button
             onClick={proceed}
-            className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory"
+            disabled={checking || !q.trim()}
+            className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory disabled:opacity-60"
             style={{
               letterSpacing: "0.48em",
               paddingRight: "calc(3rem - 0.48em)",
               boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
             }}
           >
-            求一支签
+            {checking ? "静观片刻…" : "求一支签"}
           </button>
         </div>
       </main>
