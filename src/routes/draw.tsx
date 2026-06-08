@@ -53,9 +53,24 @@ function DrawPage() {
       const slip = maybeSlip as SelectedSlip;
       setSelectedSlip(slip);
       const historyId = crypto.randomUUID();
+      let intent: string | undefined;
+      let category: string | undefined;
+      try {
+        const raw = sessionStorage.getItem("oneslip.pendingClassification.v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            intent = typeof parsed.intent === "string" ? parsed.intent : undefined;
+            category = typeof parsed.category === "string" ? parsed.category : undefined;
+          }
+          sessionStorage.removeItem("oneslip.pendingClassification.v1");
+        }
+      } catch {}
       pushHistory({
         id: historyId,
         question: question.trim(),
+        intent,
+        category,
         slip,
         createdAt: Date.now(),
         savedKits: {},
