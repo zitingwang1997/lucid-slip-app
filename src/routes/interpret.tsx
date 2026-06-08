@@ -24,11 +24,11 @@ export const Route = createFileRoute("/interpret")({
 const guidanceItems = [
   { key: "daily_action", label: "今日行动" },
   { key: "book", label: "推荐书籍" },
+  { key: "music", label: "今日乐曲" },
   { key: "guardian_color", label: "守护颜色" },
   { key: "amulet", label: "护身物" },
   { key: "daily_scent", label: "今日香气" },
   { key: "lucky_number", label: "幸运数字" },
-  { key: "music", label: "今日乐曲" },
   { key: "quote", label: "今日一句" },
 ] as const;
 
