@@ -1,8 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { Shell } from "@/components/Shell";
-import { setUserQuestion, clearRitualSession } from "@/lib/fortune-store";
+import {
+  clearRitualSession,
+  getTodayHistory,
+  setUserQuestion,
+  updateHistoryEntry,
+} from "@/lib/fortune-store";
+import { checkSameDayQuestion } from "@/lib/similarity.functions";
 import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
