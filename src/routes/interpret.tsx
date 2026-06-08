@@ -42,30 +42,6 @@ interface RemedyKitResult {
 
 type KitCache = Partial<Record<KitKey, RemedyKitResult>>;
 
-const KITS_STORAGE_PREFIX = "oneslip.remedyKits.v1.";
-
-function slipCacheId(slip: SelectedSlip | null): string {
-  if (!slip) return "unknown";
-  return String(slip.id ?? slip.number ?? "unknown");
-}
-
-function readKitsFromStorage(slip: SelectedSlip | null): KitCache | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(KITS_STORAGE_PREFIX + slipCacheId(slip));
-    return raw ? (JSON.parse(raw) as KitCache) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeKitsToStorage(slip: SelectedSlip | null, kits: KitCache) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(KITS_STORAGE_PREFIX + slipCacheId(slip), JSON.stringify(kits));
-  } catch {}
-}
-
 function InterpretPage() {
   const navigate = useNavigate();
   const remedyKitsFn = useServerFn(getRemedyKits);
@@ -96,8 +72,6 @@ function InterpretPage() {
     }
     setSlip(s);
     setResult(r);
-    const cached = readKitsFromStorage(s);
-    if (cached) setKitCache(cached);
 
     // Persist interpretation to current history entry, and hydrate savedKeys
     const histId = getCurrentHistoryId();
@@ -143,7 +117,6 @@ function InterpretPage() {
         });
         const kits = (res?.kits ?? {}) as KitCache;
         setKitCache(kits);
-        writeKitsToStorage(s, kits);
       } catch (err) {
         console.error("[remedy kits] error", err);
         setKitsError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
@@ -157,9 +130,6 @@ function InterpretPage() {
   useEffect(() => {
     if (!slip || !result) return;
     if (fetchedRef.current) return;
-    const cached = readKitsFromStorage(slip);
-    const hasAll = cached && guidanceItems.every((g) => cached[g.key]);
-    if (hasAll) return;
     fetchedRef.current = true;
     void fetchKits(slip, result);
   }, [slip, result, fetchKits]);
