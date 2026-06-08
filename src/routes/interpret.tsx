@@ -44,25 +44,32 @@ type KitCache = Partial<Record<KitKey, RemedyKitResult>>;
 
 const KITS_STORAGE_PREFIX = "oneslip.remedyKits.v1.";
 
-function slipCacheId(slip: SelectedSlip | null): string {
-  if (!slip) return "unknown";
-  return String(slip.id ?? slip.number ?? "unknown");
+function kitCacheId(): string | null {
+  return getCurrentHistoryId();
 }
 
-function readKitsFromStorage(slip: SelectedSlip | null): KitCache | null {
+function readKitsFromStorage(): KitCache | null {
   if (typeof window === "undefined") return null;
+
+  const id = kitCacheId();
+  if (!id) return null;
+
   try {
-    const raw = localStorage.getItem(KITS_STORAGE_PREFIX + slipCacheId(slip));
+    const raw = localStorage.getItem(KITS_STORAGE_PREFIX + id);
     return raw ? (JSON.parse(raw) as KitCache) : null;
   } catch {
     return null;
   }
 }
 
-function writeKitsToStorage(slip: SelectedSlip | null, kits: KitCache) {
+function writeKitsToStorage(kits: KitCache) {
   if (typeof window === "undefined") return;
+
+  const id = kitCacheId();
+  if (!id) return;
+
   try {
-    localStorage.setItem(KITS_STORAGE_PREFIX + slipCacheId(slip), JSON.stringify(kits));
+    localStorage.setItem(KITS_STORAGE_PREFIX + id, JSON.stringify(kits));
   } catch {}
 }
 
@@ -96,7 +103,7 @@ function InterpretPage() {
     }
     setSlip(s);
     setResult(r);
-    const cached = readKitsFromStorage(s);
+    const cached = readKitsFromStorage();
     if (cached) setKitCache(cached);
 
     // Persist interpretation to current history entry, and hydrate savedKeys
@@ -143,7 +150,7 @@ function InterpretPage() {
         });
         const kits = (res?.kits ?? {}) as KitCache;
         setKitCache(kits);
-        writeKitsToStorage(s, kits);
+        writeKitsToStorage(kits);
       } catch (err) {
         console.error("[remedy kits] error", err);
         setKitsError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
@@ -157,7 +164,7 @@ function InterpretPage() {
   useEffect(() => {
     if (!slip || !result) return;
     if (fetchedRef.current) return;
-    const cached = readKitsFromStorage(slip);
+    const cached = readKitsFromStorage();
     const hasAll = cached && guidanceItems.every((g) => cached[g.key]);
     if (hasAll) return;
     fetchedRef.current = true;
