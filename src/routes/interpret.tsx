@@ -233,15 +233,15 @@ function InterpretPage() {
           <ReadingBody text={xiang} placeholder="象意正在显现…" />
         </Section>
 
-        <Section eyebrow="02" title={result?.yi_title || "意"} delay={400}>
+        <Section eyebrow="意" title={result?.yi_title || "意"} delay={400}>
           <ReadingBody text={yi} placeholder="意正在沉淀…" />
         </Section>
 
-        <Section eyebrow="03" title={result?.xing_title || "行"} delay={600}>
+        <Section eyebrow="行" title={result?.xing_title || "行"} delay={600}>
           <ReadingBody text={xing} placeholder="行止待显…" />
         </Section>
 
-        <Section eyebrow="04" title="解惑锦囊" delay={800}>
+        <Section eyebrow="解惑锦囊" title="解惑锦囊" delay={800}>
           <p className="-mt-3 mb-6 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">
             从签中取一味解药
           </p>
