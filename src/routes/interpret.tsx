@@ -28,8 +28,6 @@ const guidanceItems = [
   { key: "guardian_color", label: "守护颜色" },
   { key: "amulet", label: "护身物" },
   { key: "daily_scent", label: "今日香气" },
-  { key: "lucky_number", label: "幸运数字" },
-  { key: "quote", label: "今日一句" },
 ] as const;
 
 type KitKey = (typeof guidanceItems)[number]["key"];
