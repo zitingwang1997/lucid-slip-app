@@ -186,19 +186,41 @@ function PoemPage() {
           }}
         >
           {slip.image_url ? (
-            <img
-              src={slip.image_url}
-              alt="签"
-              className="block select-none"
-              draggable={false}
-              style={{
-                width: "100%",
-                maxWidth: 520,
-                height: "auto",
-                objectFit: "contain",
-                filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
-              }}
-            />
+            <div className="relative">
+              <img
+                src={slip.image_url}
+                alt="签"
+                className="block select-none"
+                draggable={false}
+                style={{
+                  width: "100%",
+                  maxWidth: 520,
+                  height: "auto",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                }}
+              />
+
+              <div className="pointer-events-none absolute bottom-[18%] right-[12%] flex flex-row-reverse gap-3">
+                {slip.poem
+                  ?.split(/[，。！？；\n]/)
+                  .filter(Boolean)
+                  .map((line, index) => (
+                    <span
+                      key={index}
+                      className="poem-line-reveal font-serif-sc text-[13px] leading-loose text-[rgba(55,38,24,0.72)]"
+                      style={{
+                        writingMode: "vertical-rl",
+                        textOrientation: "mixed",
+                        letterSpacing: "0.16em",
+                        animationDelay: `${0.8 + index * 0.45}s`,
+                      }}
+                    >
+                      {line}
+                    </span>
+                  ))}
+              </div>
+            </div>
           ) : (
             <div className="mx-auto flex aspect-[2/3] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
               签面缺失
