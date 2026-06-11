@@ -67,6 +67,26 @@ export function getInterpretation(): InterpretationResult | null {
   return safeGet<InterpretationResult>(INTERP_KEY);
 }
 
+// ----- Interpret cache v2 (auto-prefetch on /poem) -----
+const INTERP_V2_KEY = "oneslip.interpret.v2";
+
+export interface InterpretCacheV2 {
+  slipId: string;
+  user_question: string;
+  interpret: InterpretationResult;
+  createdAt: number;
+}
+
+export function setInterpretCacheV2(entry: InterpretCacheV2) {
+  safeSet(INTERP_V2_KEY, entry);
+}
+export function getInterpretCacheV2(): InterpretCacheV2 | null {
+  return safeGet<InterpretCacheV2>(INTERP_V2_KEY);
+}
+export function slipCacheId(slip: SelectedSlip): string {
+  return String(slip.id ?? slip.number ?? slip.title ?? "");
+}
+
 export function clearRitualSession() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SLIP_KEY);
