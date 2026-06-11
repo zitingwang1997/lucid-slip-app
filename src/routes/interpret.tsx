@@ -3,14 +3,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { getRemedyKits } from "@/lib/dify.functions";
+import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
 import {
   getCurrentHistoryId,
   getHistoryEntry,
   getInterpretation,
+  getInterpretCacheV2,
   getSelectedSlip,
   getUserQuestion,
   saveKitToHistory,
+  setInterpretation,
+  setInterpretCacheV2,
+  slipCacheId,
   updateHistoryEntry,
   type InterpretationResult,
   type SelectedSlip,
@@ -85,10 +89,69 @@ function InterpretPage() {
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const fetchedRef = useRef(false);
 
+  const interpretSlipFn = useServerFn(interpretSlip);
+  const [interpretLoading, setInterpretLoading] = useState(false);
+  const [interpretError, setInterpretError] = useState<string | null>(null);
+  const interpretInflight = useRef(false);
+
+  const persistToHistory = useCallback((r: InterpretationResult) => {
+    const histId = getCurrentHistoryId();
+    if (!histId) return;
+    const entry = getHistoryEntry(histId);
+    if (!entry) return;
+    if (!entry.interpretation) {
+      updateHistoryEntry(histId, { interpretation: r });
+    }
+    if (entry.savedKits) {
+      setSavedKeys(new Set(Object.keys(entry.savedKits)));
+    }
+  }, []);
+
+  const fallbackFetchInterpret = useCallback(
+    async (s: SelectedSlip, q: string) => {
+      if (interpretInflight.current) return;
+      interpretInflight.current = true;
+      setInterpretLoading(true);
+      setInterpretError(null);
+      try {
+        const res = await interpretSlipFn({
+          data: {
+            user_question: q,
+            qian_data: JSON.stringify({
+              id: s.id,
+              number: s.number,
+              title: s.title,
+              poem: s.poem,
+              allusion: s.allusion,
+              meaning_seed: (s as any).meaning_seed ?? s.keywords,
+            }),
+          },
+        });
+        const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
+        if (!hasContent) throw new Error("解签结果为空，请重试");
+        setInterpretation(res);
+        setInterpretCacheV2({
+          slipId: slipCacheId(s),
+          user_question: q,
+          interpret: res,
+          createdAt: Date.now(),
+        });
+        setResult(res);
+        persistToHistory(res);
+      } catch (e: any) {
+        console.error("[Workflow B fallback] failed:", e);
+        setInterpretError(e?.message ?? "解签失败，请稍后再试");
+      } finally {
+        interpretInflight.current = false;
+        setInterpretLoading(false);
+      }
+    },
+    [interpretSlipFn, persistToHistory],
+  );
+
   useEffect(() => {
     const q = getUserQuestion();
     const s = getSelectedSlip();
-    const r = getInterpretation();
     if (!q || !q.trim()) {
       navigate({ to: "/" });
       return;
@@ -97,29 +160,37 @@ function InterpretPage() {
       navigate({ to: "/draw" });
       return;
     }
-    if (!r || (!r.xiang_content && !r.yi_content && !r.xing_content)) {
-      navigate({ to: "/poem" });
-      return;
-    }
     setSlip(s);
-    setResult(r);
-    const cached = readKitsFromStorage();
-    if (cached) setKitCache(cached);
 
-    // Persist interpretation to current history entry, and hydrate savedKeys
-    const histId = getCurrentHistoryId();
-    if (histId) {
-      const entry = getHistoryEntry(histId);
-      if (entry) {
-        if (!entry.interpretation) {
-          updateHistoryEntry(histId, { interpretation: r });
-        }
-        if (entry.savedKits) {
-          setSavedKeys(new Set(Object.keys(entry.savedKits)));
-        }
+    // Prefer v2 cache when slipId + question match
+    const v2 = getInterpretCacheV2();
+    const sid = slipCacheId(s);
+    let r: InterpretationResult | null = null;
+    if (
+      v2 &&
+      v2.slipId === sid &&
+      v2.user_question === q &&
+      (v2.interpret?.xiang_content || v2.interpret?.yi_content || v2.interpret?.xing_content)
+    ) {
+      r = v2.interpret;
+      setInterpretation(r);
+    } else {
+      const legacy = getInterpretation();
+      if (legacy && (legacy.xiang_content || legacy.yi_content || legacy.xing_content)) {
+        r = legacy;
       }
     }
-  }, [navigate]);
+
+    const kitsCached = readKitsFromStorage();
+    if (kitsCached) setKitCache(kitsCached);
+
+    if (r) {
+      setResult(r);
+      persistToHistory(r);
+    } else {
+      void fallbackFetchInterpret(s, q);
+    }
+  }, [navigate, fallbackFetchInterpret, persistToHistory]);
 
   const fetchKits = useCallback(
     async (s: SelectedSlip, r: InterpretationResult) => {

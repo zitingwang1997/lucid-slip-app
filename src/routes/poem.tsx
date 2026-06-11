@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import {
+  getInterpretCacheV2,
   getSelectedSlip,
   getUserQuestion,
+  setInterpretCacheV2,
   setInterpretation,
+  slipCacheId,
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { interpretSlip } from "@/lib/dify.functions";
@@ -26,14 +29,49 @@ function buildQianData(slip: SelectedSlip) {
   };
 }
 
+type InterpretStatus = "idle" | "loading" | "success" | "error";
+
 function PoemPage() {
   const navigate = useNavigate();
   const interpretSlipFn = useServerFn(interpretSlip);
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const inflight = useRef(false);
+
+  const runInterpret = useCallback(
+    async (s: SelectedSlip, q: string) => {
+      if (inflight.current) return;
+      inflight.current = true;
+      setInterpretStatus("loading");
+      setError(null);
+      try {
+        const payload = {
+          user_question: q,
+          qian_data: JSON.stringify(buildQianData(s)),
+        };
+        const res = await interpretSlipFn({ data: payload });
+        const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
+        if (!hasContent) throw new Error("解签结果为空，请重试");
+        setInterpretation(res);
+        setInterpretCacheV2({
+          slipId: slipCacheId(s),
+          user_question: q,
+          interpret: res,
+          createdAt: Date.now(),
+        });
+        setInterpretStatus("success");
+      } catch (e: any) {
+        console.error("[Workflow B] failed:", e);
+        setError(e?.message ?? "解签失败，请稍后再试");
+        setInterpretStatus("error");
+      } finally {
+        inflight.current = false;
+      }
+    },
+    [interpretSlipFn],
+  );
 
   useEffect(() => {
     const q = getUserQuestion();
@@ -48,44 +86,47 @@ function PoemPage() {
     }
     setSlip(s);
     const t = window.setTimeout(() => setRevealed(true), 600);
+
+    // Check cache first; if match, mark success without calling
+    const cached = getInterpretCacheV2();
+    if (
+      cached &&
+      cached.slipId === slipCacheId(s) &&
+      cached.user_question === q &&
+      (cached.interpret?.xiang_content ||
+        cached.interpret?.yi_content ||
+        cached.interpret?.xing_content)
+    ) {
+      setInterpretation(cached.interpret);
+      setInterpretStatus("success");
+    } else {
+      void runInterpret(s, q);
+    }
     return () => window.clearTimeout(t);
-  }, [navigate]);
+  }, [navigate, runInterpret]);
 
   if (!slip) return null;
 
-  const onInterpret = async () => {
-    if (loading || inflight.current) return;
-    inflight.current = true;
-    setLoading(true);
-    setError(null);
-    try {
-      const user_question = getUserQuestion();
-      const qianData = buildQianData(slip);
-      const payload = {
-        user_question,
-        qian_data: JSON.stringify(qianData),
-      };
-      console.log("[OneSlip] Workflow B payload", payload);
-      const res = await interpretSlipFn({ data: payload });
-      console.log("[OneSlip] Workflow B normalized response", res);
-      const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
-      if (!hasContent) {
-        throw new Error("解签结果为空，请重试");
-      }
-      setInterpretation(res);
+  const onPrimary = () => {
+    if (interpretStatus === "success") {
       navigate({ to: "/interpret" });
-    } catch (e: any) {
-      console.error("[Workflow B] failed:", e);
-      setError(e?.message ?? "解签失败，请稍后再试");
-    } finally {
-      inflight.current = false;
-      setLoading(false);
+    } else if (interpretStatus === "error") {
+      const q = getUserQuestion();
+      if (slip && q) void runInterpret(slip, q);
     }
   };
 
   const onRestart = () => {
     navigate({ to: "/" });
   };
+
+  const buttonLabel =
+    interpretStatus === "loading"
+      ? "解 签 生 成 中…"
+      : interpretStatus === "error"
+        ? "重 新 解 签"
+        : "解 签";
+  const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
 
   return (
     <Shell intensity={0.5}>
@@ -124,18 +165,20 @@ function PoemPage() {
         {revealed && (
           <div className="mt-10 flex w-full max-w-[340px] flex-col items-center gap-3 slow-fade-in">
             <button
-              onClick={onInterpret}
-              disabled={loading}
+              onClick={onPrimary}
+              disabled={buttonDisabled}
               className="w-full rounded-full border border-primary/40 bg-gradient-to-b from-primary/15 to-transparent py-3.5 text-center font-serif-sc text-sm tracking-[0.5em] text-ivory transition-all hover:border-primary/70 disabled:opacity-60"
               style={{ boxShadow: "0 0 28px oklch(0.74 0.13 55 / 0.15)" }}
             >
-              {loading ? "解 签 中…" : error ? "重 试 解 签" : "解 签"}
+              {buttonLabel}
             </button>
-            {error && (
+            {interpretStatus === "error" && (
               <>
-                <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">
-                  {error}
-                </p>
+                {error && (
+                  <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">
+                    {error}
+                  </p>
+                )}
                 <button
                   onClick={onRestart}
                   className="mt-1 rounded-full border border-foreground/20 px-6 py-2 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/70 transition-colors hover:border-foreground/40 hover:text-foreground"
