@@ -3,14 +3,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { getRemedyKits } from "@/lib/dify.functions";
+import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
 import {
   getCurrentHistoryId,
   getHistoryEntry,
   getInterpretation,
+  getInterpretCacheV2,
   getSelectedSlip,
   getUserQuestion,
   saveKitToHistory,
+  setInterpretation,
+  setInterpretCacheV2,
+  slipCacheId,
   updateHistoryEntry,
   type InterpretationResult,
   type SelectedSlip,
