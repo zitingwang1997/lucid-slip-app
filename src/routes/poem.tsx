@@ -42,25 +42,54 @@ function PoemPage() {
 
   const runInterpret = useCallback(
     async (s: SelectedSlip, q: string) => {
-      if (inflight.current) return;
+      console.log("[PRELOAD] runInterpret called");
+      console.log("[PRELOAD] slip:", s);
+      console.log("[PRELOAD] question:", q);
+
+      if (inflight.current) {
+        console.warn("[PRELOAD] already inflight, skip");
+        return;
+      }
+
       inflight.current = true;
       setInterpretStatus("loading");
       setError(null);
+
       try {
         const payload = {
           user_question: q,
           qian_data: JSON.stringify(buildQianData(s)),
         };
+
+        console.log("[PRELOAD] payload to Workflow B:", payload);
+
         const res = await interpretSlipFn({ data: payload });
+
+        console.log("[PRELOAD] raw Workflow B response:", res);
+
         const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
-        if (!hasContent) throw new Error("解签结果为空，请重试");
+
+        console.log("[PRELOAD] hasContent:", hasContent);
+
+        if (!hasContent) {
+          throw new Error("解签结果为空，请重试");
+        }
+
         setInterpretation(res);
-        setInterpretCacheV2({
+
+        const cachePayload = {
           slipId: slipCacheId(s),
           user_question: q,
           interpret: res,
           createdAt: Date.now(),
-        });
+        };
+
+        console.log("[PRELOAD] saving interpret cache:", cachePayload);
+
+        setInterpretCacheV2(cachePayload);
+
+        console.log("[PRELOAD] saved cache now:", getInterpretCacheV2());
+
         setInterpretStatus("success");
       } catch (e: any) {
         console.error("[Workflow B] failed:", e);
@@ -74,34 +103,54 @@ function PoemPage() {
   );
 
   useEffect(() => {
+    console.log("[POEM] mounted");
+
+    const allKeys = Object.keys(localStorage).filter((k) => k.includes("oneslip"));
+    console.log("[POEM] oneslip localStorage keys:", allKeys);
+    allKeys.forEach((k) => {
+      console.log(`[POEM] ${k}:`, localStorage.getItem(k));
+    });
+
     const q = getUserQuestion();
+    console.log("[POEM] user question:", q);
+
     if (!q || !q.trim()) {
+      console.warn("[POEM] missing user question, redirect to /");
       navigate({ to: "/" });
       return;
     }
+
     const s = getSelectedSlip();
+    console.log("[POEM] selected slip:", s);
+    console.log("[POEM] slip cache id:", s ? slipCacheId(s) : null);
+
     if (!s) {
+      console.warn("[POEM] missing selected slip, redirect to /draw");
       navigate({ to: "/draw" });
       return;
     }
+
     setSlip(s);
+
     const t = window.setTimeout(() => setRevealed(true), 600);
 
-    // Check cache first; if match, mark success without calling
     const cached = getInterpretCacheV2();
+    console.log("[POEM] interpret cache:", cached);
+
     if (
       cached &&
       cached.slipId === slipCacheId(s) &&
       cached.user_question === q &&
-      (cached.interpret?.xiang_content ||
-        cached.interpret?.yi_content ||
-        cached.interpret?.xing_content)
+      (cached.interpret?.xiang_content || cached.interpret?.yi_content || cached.interpret?.xing_content)
     ) {
+      console.log("[POEM] cache hit, skip Workflow B");
       setInterpretation(cached.interpret);
       setInterpretStatus("success");
     } else {
+      console.log("[POEM] cache miss, start Workflow B");
       void runInterpret(s, q);
     }
+
     return () => window.clearTimeout(t);
   }, [navigate, runInterpret]);
 
@@ -121,11 +170,7 @@ function PoemPage() {
   };
 
   const buttonLabel =
-    interpretStatus === "loading"
-      ? "解 签 生 成 中…"
-      : interpretStatus === "error"
-        ? "重 新 解 签"
-        : "解 签";
+    interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
   const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
 
   return (
@@ -151,8 +196,7 @@ function PoemPage() {
                 maxWidth: 520,
                 height: "auto",
                 objectFit: "contain",
-                filter:
-                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
               }}
             />
           ) : (
@@ -174,11 +218,7 @@ function PoemPage() {
             </button>
             {interpretStatus === "error" && (
               <>
-                {error && (
-                  <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">
-                    {error}
-                  </p>
-                )}
+                {error && <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">{error}</p>}
                 <button
                   onClick={onRestart}
                   className="mt-1 rounded-full border border-foreground/20 px-6 py-2 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/70 transition-colors hover:border-foreground/40 hover:text-foreground"
