@@ -173,9 +173,40 @@ function PoemPage() {
     interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
   const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
 
+  const poemLines = (slip.poem ?? "")
+    .split(/[，。！？；\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const rightLines = poemLines.slice(0, 2);
+  const leftLines = poemLines.slice(2, 4);
+
+  const rawNumber = String(slip.number ?? slip.id ?? "").trim();
+  const numDigits = rawNumber.match(/\d+/)?.[0];
+  const arabicNumber = numDigits ? numDigits.padStart(2, "0") : rawNumber;
+  const chineseNumber = (() => {
+    const n = numDigits ? parseInt(numDigits, 10) : NaN;
+    const map = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖", "拾"];
+    if (!Number.isFinite(n)) return "";
+    if (n <= 10) return map[n] ?? "";
+    if (n < 20) return `拾${map[n - 10] ?? ""}`;
+    if (n < 100) {
+      const t = Math.floor(n / 10);
+      const o = n % 10;
+      return `${map[t]}拾${o ? map[o] : ""}`;
+    }
+    return String(n);
+  })();
+
+  const realm = String(slip.realm ?? "").trim();
+  const realmLevelMatch = realm.match(/(上吉|中吉|下吉|大吉|小吉|平|凶)/);
+  const realmLevel = realmLevelMatch?.[1] ?? "";
+  const realmName = realmLevel
+    ? realm.replace(realmLevel, "").replace(/[·\-\s]+$/, "").trim() || realm
+    : realm;
+
   return (
     <Shell intensity={0.5}>
-      <main className="flex flex-1 flex-col items-center justify-center px-6 pb-12 pt-4">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12 pt-4">
         <div
           className="slow-fade-in w-full"
           style={{
@@ -183,46 +214,128 @@ function PoemPage() {
             transform: revealed ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 1.4s ease, transform 1.4s ease",
             maxWidth: 520,
+            margin: "0 auto",
           }}
         >
           {slip.image_url ? (
-            <div className="relative">
+            <div
+              className="relative mx-auto w-full"
+              style={{
+                aspectRatio: "848 / 1489",
+                maxWidth: 520,
+                containerType: "inline-size",
+                filter:
+                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+              }}
+            >
               <img
                 src={slip.image_url}
-                alt="签"
-                className="block select-none"
+                alt={slip.title ?? "签"}
+                className="absolute inset-0 block h-full w-full select-none"
                 draggable={false}
-                style={{
-                  width: "100%",
-                  maxWidth: 520,
-                  height: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
-                }}
+                style={{ objectFit: "contain" }}
               />
 
-              <div className="pointer-events-none absolute bottom-[18%] right-[12%] flex flex-row-reverse gap-3">
-                {slip.poem
-                  ?.split(/[，。！？；\n]/)
-                  .filter(Boolean)
-                  .map((line, index) => (
-                    <span
-                      key={index}
-                      className="poem-line-reveal font-serif-sc text-[13px] leading-loose text-[rgba(55,38,24,0.72)]"
-                      style={{
-                        writingMode: "vertical-rl",
-                        textOrientation: "mixed",
-                        letterSpacing: "0.16em",
-                        animationDelay: `${0.8 + index * 0.45}s`,
-                      }}
-                    >
-                      {line}
-                    </span>
-                  ))}
+              {/* Top-left: Chinese number + Arabic number */}
+              <div
+                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
+                style={{ left: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
+              >
+                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>
+                  {chineseNumber}
+                </span>
+                <span
+                  style={{
+                    fontSize: "clamp(10px, 2.6cqi, 18px)",
+                    letterSpacing: "0.18em",
+                    marginTop: "0.45em",
+                  }}
+                >
+                  {arabicNumber}
+                </span>
+              </div>
+
+              {/* Top-right: realm name + realm level */}
+              <div
+                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
+                style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
+              >
+                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>
+                  {realmName}
+                </span>
+                {realmLevel && (
+                  <span
+                    style={{
+                      fontSize: "clamp(10px, 2.6cqi, 18px)",
+                      letterSpacing: "0.18em",
+                      marginTop: "0.45em",
+                    }}
+                  >
+                    {realmLevel}
+                  </span>
+                )}
+              </div>
+
+              {/* Top-center: title */}
+              <div
+                className="pointer-events-none absolute left-1/2 -translate-x-1/2 font-serif-sc text-[rgba(40,28,18,0.92)]"
+                style={{
+                  top: "7%",
+                  fontSize: "clamp(24px, 7.6cqi, 54px)",
+                  fontWeight: 600,
+                  letterSpacing: "0.14em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {slip.title}
+              </div>
+
+              {/* Right vertical column: lines 1-2 (rightmost line first) */}
+              <div
+                className="pointer-events-none absolute flex flex-row-reverse"
+                style={{ right: "7%", top: "22%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+              >
+                {rightLines.map((line, index) => (
+                  <span
+                    key={`r-${index}`}
+                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
+                    style={{
+                      writingMode: "vertical-rl",
+                      textOrientation: "upright",
+                      letterSpacing: "0.2em",
+                      fontSize: "clamp(14px, 4.6cqi, 32px)",
+                      animationDelay: `${0.8 + index * 0.45}s`,
+                    }}
+                  >
+                    {line}
+                  </span>
+                ))}
+              </div>
+
+              {/* Left vertical column: lines 3-4 (rightmost line first) */}
+              <div
+                className="pointer-events-none absolute flex flex-row-reverse"
+                style={{ left: "7%", top: "22%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+              >
+                {leftLines.map((line, index) => (
+                  <span
+                    key={`l-${index}`}
+                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
+                    style={{
+                      writingMode: "vertical-rl",
+                      textOrientation: "upright",
+                      letterSpacing: "0.2em",
+                      fontSize: "clamp(14px, 4.6cqi, 32px)",
+                      animationDelay: `${0.8 + (rightLines.length + index) * 0.45}s`,
+                    }}
+                  >
+                    {line}
+                  </span>
+                ))}
               </div>
             </div>
           ) : (
-            <div className="mx-auto flex aspect-[2/3] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
+            <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
               签面缺失
             </div>
           )}
