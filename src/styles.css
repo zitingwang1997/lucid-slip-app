@@ -34,7 +34,7 @@
   --color-parchment: var(--parchment);
   --color-stone: var(--stone);
 
-  --font-serif-sc: "Noto Serif SC", "Songti SC", serif;
+  --font-serif-sc: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-serif-display: "Cormorant Garamond", "Noto Serif SC", serif;
   --font-sans: "Inter", system-ui, sans-serif;
 }
