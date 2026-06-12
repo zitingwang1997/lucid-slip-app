@@ -173,13 +173,19 @@ function PoemPage() {
     interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
   const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
 
-  const poemColumns =
+  const poemParts =
     (slip.poem ?? "")
-      .match(/[^。！？]+[。！？]?/g)
+      .match(/[^，。！？；]+[，。！？；]?/g)
       ?.map((s) => s.trim())
       .filter(Boolean) ?? [];
-  const rightColumn = poemColumns[0] ?? "";
-  const leftColumn = poemColumns[1] ?? "";
+
+  const normalizePoemColumn = (text: string) => {
+    if (!text) return "";
+    return /[，。！？；]$/.test(text) ? text : `${text}。`;
+  };
+
+  const rightColumn = normalizePoemColumn(poemParts.slice(0, 2).join(""));
+  const leftColumn = normalizePoemColumn(poemParts.slice(2, 4).join(""));
 
   const rawNumber = String(slip.number ?? slip.id ?? "").trim();
   const numDigits = rawNumber.match(/\d+/)?.[0];
@@ -298,9 +304,10 @@ function PoemPage() {
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
                   style={{
                     writingMode: "vertical-rl",
-                    textOrientation: "upright",
-                    letterSpacing: "0.2em",
-                    fontSize: "clamp(14px, 4.6cqi, 32px)",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: "3.6cqi",
+                    lineHeight: 1.25,
                     animationDelay: "0.8s",
                   }}
                 >
@@ -317,9 +324,10 @@ function PoemPage() {
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
                   style={{
                     writingMode: "vertical-rl",
-                    textOrientation: "upright",
-                    letterSpacing: "0.2em",
-                    fontSize: "clamp(14px, 4.6cqi, 32px)",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: "3.6cqi",
+                    lineHeight: 1.25,
                     animationDelay: "1.25s",
                   }}
                 >
