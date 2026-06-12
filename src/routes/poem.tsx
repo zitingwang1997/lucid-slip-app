@@ -245,54 +245,27 @@ function PoemPage() {
                 style={{ objectFit: "contain" }}
               />
 
-              {/* Top-left: Chinese number + Arabic number */}
+              {/* Top-left: Chinese number */}
               <div
-                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
-                style={{ left: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
-              >
-                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>{chineseNumber}</span>
-                <span
-                  style={{
-                    fontSize: "clamp(10px, 2.6cqi, 18px)",
-                    letterSpacing: "0.18em",
-                    marginTop: "0.45em",
-                  }}
-                >
-                  {arabicNumber}
-                </span>
-              </div>
-
-              {/* Top-right: realm name + realm level */}
-              <div
-                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
-                style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
-              >
-                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>{realmName}</span>
-                {realmLevel && (
-                  <span
-                    style={{
-                      fontSize: "clamp(10px, 2.6cqi, 18px)",
-                      letterSpacing: "0.18em",
-                      marginTop: "0.45em",
-                    }}
-                  >
-                    {realmLevel}
-                  </span>
-                )}
-              </div>
-
-              {/* Top-center: title */}
-              <div
-                className="pointer-events-none absolute left-1/2 -translate-x-1/2 font-serif-sc text-[rgba(40,28,18,0.92)]"
+                className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
                 style={{
-                  top: "7%",
-                  fontSize: "clamp(24px, 7.6cqi, 54px)",
-                  fontWeight: 600,
-                  letterSpacing: "0.14em",
-                  whiteSpace: "nowrap",
+                  left: "8%",
+                  top: "3.8%",
+                  fontSize: "3.8cqi",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  lineHeight: 1.15,
                 }}
               >
-                {slip.title}
+                {chineseNumber}
+              </div>
+
+              {/* Top-right: poem title */}
+              <div
+                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
+                style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.08em" }}
+              >
+                <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
               </div>
 
               {/* Right vertical column: lines 1-2 (rightmost line first) */}
