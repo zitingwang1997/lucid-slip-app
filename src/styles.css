@@ -277,7 +277,7 @@
   opacity: 0;
   filter: blur(6px);
   transform: translateY(8px);
-  animation: poemReveal 1.4s ease forwards;
+  animation: poemReveal 2s ease forwards;
 }
 
 @keyframes poemReveal {

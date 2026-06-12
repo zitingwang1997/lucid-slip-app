@@ -187,23 +187,6 @@ function PoemPage() {
   const rightColumn = normalizePoemColumn(poemParts.slice(0, 2).join(""));
   const leftColumn = normalizePoemColumn(poemParts.slice(2, 4).join(""));
 
-  const rawNumber = String(slip.number ?? slip.id ?? "").trim();
-  const numDigits = rawNumber.match(/\d+/)?.[0];
-  const arabicNumber = numDigits ? numDigits.padStart(2, "0") : rawNumber;
-  const chineseNumber = (() => {
-    const n = numDigits ? parseInt(numDigits, 10) : NaN;
-    const map = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖", "拾"];
-    if (!Number.isFinite(n)) return "";
-    if (n <= 10) return map[n] ?? "";
-    if (n < 20) return `拾${map[n - 10] ?? ""}`;
-    if (n < 100) {
-      const t = Math.floor(n / 10);
-      const o = n % 10;
-      return `${map[t]}拾${o ? map[o] : ""}`;
-    }
-    return String(n);
-  })();
-
   const realm = String(slip.realm ?? "").trim();
   const realmLevelMatch = realm.match(/(上吉|中吉|下吉|大吉|小吉|平|凶)/);
   const realmLevel = realmLevelMatch?.[1] ?? "";
@@ -229,10 +212,10 @@ function PoemPage() {
         >
           {slip.image_url ? (
             <div
-              className="relative mx-auto w-full"
+              className="relative mx-auto w-[88%]"
               style={{
                 aspectRatio: "848 / 1489",
-                maxWidth: 520,
+                maxWidth: 460,
                 containerType: "inline-size",
                 filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
               }}
@@ -257,7 +240,7 @@ function PoemPage() {
                   lineHeight: 1.15,
                 }}
               >
-                {chineseNumber}
+                {slip.number}
               </div>
 
               {/* Top-right: poem title */}
@@ -281,7 +264,7 @@ function PoemPage() {
                     letterSpacing: "0.12em",
                     fontSize: "3.6cqi",
                     lineHeight: 1.25,
-                    animationDelay: "0.8s",
+                    animationDelay: "1.2s",
                   }}
                 >
                   {rightColumn}
@@ -301,7 +284,7 @@ function PoemPage() {
                     letterSpacing: "0.12em",
                     fontSize: "3.6cqi",
                     lineHeight: 1.25,
-                    animationDelay: "1.25s",
+                    animationDelay: "3.2s",
                   }}
                 >
                   {leftColumn}
