@@ -173,12 +173,13 @@ function PoemPage() {
     interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
   const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
 
-  const poemLines = (slip.poem ?? "")
-    .split(/[，。！？；\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const rightLines = poemLines.slice(0, 2);
-  const leftLines = poemLines.slice(2, 4);
+  const poemColumns =
+    (slip.poem ?? "")
+      .match(/[^。！？]+[。！？]?/g)
+      ?.map((s) => s.trim())
+      .filter(Boolean) ?? [];
+  const rightColumn = poemColumns[0] ?? "";
+  const leftColumn = poemColumns[1] ?? "";
 
   const rawNumber = String(slip.number ?? slip.id ?? "").trim();
   const numDigits = rawNumber.match(/\d+/)?.[0];
@@ -201,7 +202,10 @@ function PoemPage() {
   const realmLevelMatch = realm.match(/(上吉|中吉|下吉|大吉|小吉|平|凶)/);
   const realmLevel = realmLevelMatch?.[1] ?? "";
   const realmName = realmLevel
-    ? realm.replace(realmLevel, "").replace(/[·\-\s]+$/, "").trim() || realm
+    ? realm
+        .replace(realmLevel, "")
+        .replace(/[·\-\s]+$/, "")
+        .trim() || realm
     : realm;
 
   return (
@@ -224,8 +228,7 @@ function PoemPage() {
                 aspectRatio: "848 / 1489",
                 maxWidth: 520,
                 containerType: "inline-size",
-                filter:
-                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
               }}
             >
               <img
@@ -241,9 +244,7 @@ function PoemPage() {
                 className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
                 style={{ left: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
               >
-                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>
-                  {chineseNumber}
-                </span>
+                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>{chineseNumber}</span>
                 <span
                   style={{
                     fontSize: "clamp(10px, 2.6cqi, 18px)",
@@ -260,9 +261,7 @@ function PoemPage() {
                 className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
                 style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.05em" }}
               >
-                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>
-                  {realmName}
-                </span>
+                <span style={{ fontSize: "clamp(14px, 4.4cqi, 30px)", fontWeight: 500 }}>{realmName}</span>
                 {realmLevel && (
                   <span
                     style={{
@@ -295,21 +294,18 @@ function PoemPage() {
                 className="pointer-events-none absolute flex flex-row-reverse"
                 style={{ right: "7%", top: "22%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
-                {rightLines.map((line, index) => (
-                  <span
-                    key={`r-${index}`}
-                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "upright",
-                      letterSpacing: "0.2em",
-                      fontSize: "clamp(14px, 4.6cqi, 32px)",
-                      animationDelay: `${0.8 + index * 0.45}s`,
-                    }}
-                  >
-                    {line}
-                  </span>
-                ))}
+                <span
+                  className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "upright",
+                    letterSpacing: "0.2em",
+                    fontSize: "clamp(14px, 4.6cqi, 32px)",
+                    animationDelay: "0.8s",
+                  }}
+                >
+                  {rightColumn}
+                </span>
               </div>
 
               {/* Left vertical column: lines 3-4 (rightmost line first) */}
@@ -317,21 +313,18 @@ function PoemPage() {
                 className="pointer-events-none absolute flex flex-row-reverse"
                 style={{ left: "7%", top: "22%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
-                {leftLines.map((line, index) => (
-                  <span
-                    key={`l-${index}`}
-                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "upright",
-                      letterSpacing: "0.2em",
-                      fontSize: "clamp(14px, 4.6cqi, 32px)",
-                      animationDelay: `${0.8 + (rightLines.length + index) * 0.45}s`,
-                    }}
-                  >
-                    {line}
-                  </span>
-                ))}
+                <span
+                  className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "upright",
+                    letterSpacing: "0.2em",
+                    fontSize: "clamp(14px, 4.6cqi, 32px)",
+                    animationDelay: "1.25s",
+                  }}
+                >
+                  {leftColumn}
+                </span>
               </div>
             </div>
           ) : (
