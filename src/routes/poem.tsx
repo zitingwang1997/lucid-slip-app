@@ -267,7 +267,14 @@ function PoemPage() {
         >
           {slip.image_url ? (
             <div
-              className="relative mx-auto w-[88%]"
+              className="relative mx-auto w-[88%] touch-none select-none cursor-pointer"
+              onPointerDown={(e) => {
+                (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+                beginHold();
+              }}
+              onPointerUp={endHold}
+              onPointerLeave={endHold}
+              onPointerCancel={endHold}
               style={{
                 aspectRatio: "848 / 1489",
                 maxWidth: 460,
