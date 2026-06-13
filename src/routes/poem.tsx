@@ -371,26 +371,46 @@ function PoemPage() {
                 className="pointer-events-none absolute inset-0"
                 style={{
                   opacity: holdProgress > 0 || awaitingInterpret ? 1 : 0,
-                  transition: "opacity 240ms ease",
+                  transition: "opacity 160ms ease",
                 }}
               >
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: `radial-gradient(circle at center, rgba(214,172,96,${0.18 * holdProgress}) 0%, rgba(214,172,96,${0.08 * holdProgress}) 34%, transparent 68%)`,
-                    boxShadow: `inset 0 0 ${24 + holdProgress * 40}px rgba(214,172,96,${0.18 + holdProgress * 0.22})`,
+                    background: `rgba(214,172,96,${0.1 * holdProgress})`,
+                    boxShadow: `
+                      inset 0 0 ${40 + holdProgress * 80}px rgba(214,172,96,${0.25 + holdProgress * 0.45}),
+                      0 0 ${20 + holdProgress * 50}px rgba(214,172,96,${0.18 + holdProgress * 0.35})
+                    `,
+                  }}
+                />
+
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(
+                      115deg,
+                      transparent 0%,
+                      transparent ${Math.max(0, holdProgress * 100 - 28)}%,
+                      rgba(255,220,140,0.0) ${Math.max(0, holdProgress * 100 - 16)}%,
+                      rgba(255,220,140,0.55) ${holdProgress * 100}%,
+                      rgba(255,220,140,0.0) ${Math.min(100, holdProgress * 100 + 16)}%,
+                      transparent ${Math.min(100, holdProgress * 100 + 28)}%,
+                      transparent 100%
+                    )`,
+                    mixBlendMode: "screen",
                   }}
                 />
 
                 <div
                   className="absolute left-1/2 top-1/2 rounded-full"
                   style={{
-                    width: `${18 + holdProgress * 42}px`,
-                    height: `${18 + holdProgress * 42}px`,
+                    width: `${36 + holdProgress * 88}px`,
+                    height: `${36 + holdProgress * 88}px`,
                     transform: "translate(-50%, -50%)",
-                    background: "rgba(214,172,96,0.72)",
-                    filter: `blur(${10 + holdProgress * 10}px)`,
-                    boxShadow: `0 0 ${30 + holdProgress * 50}px rgba(214,172,96,0.65)`,
+                    background: `rgba(214,172,96,${0.55 + holdProgress * 0.25})`,
+                    filter: `blur(${14 + holdProgress * 14}px)`,
+                    boxShadow: `0 0 ${50 + holdProgress * 90}px rgba(214,172,96,0.85)`,
                   }}
                 />
               </div>
