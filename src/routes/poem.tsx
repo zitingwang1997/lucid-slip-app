@@ -228,6 +228,11 @@ function PoemPage() {
 
   if (!slip) return null;
 
+  const normalizePoemColumn = (text: string) => {
+    if (!text) return "";
+    return /[，。！？；]$/.test(text) ? text : `${text}。`;
+  };
+
   const poemSentences =
     (slip.poem ?? "")
       .match(/[^。！？]+[。！？]?/g)
