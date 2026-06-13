@@ -204,6 +204,6 @@ function QuestionPage() {
           </button>
         </div>
       </main>
-    </Shell>
+    </Shell></>
   );
 }
