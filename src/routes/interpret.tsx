@@ -467,11 +467,21 @@ function InterpretPage() {
 
               {kitResult ? (
                 <div className="mt-6 space-y-5">
-                  {kitResult.kit_subtitle && (
+                  {kitResult.kit_subtitle && openItem?.key === "guardian_color" ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div
+                        className="h-14 w-14 rounded-full border border-white/15 shadow-lg"
+                        style={{
+                          backgroundColor: kitResult.kit_subtitle,
+                          boxShadow: `0 0 28px ${kitResult.kit_subtitle}55`,
+                        }}
+                      />
+                    </div>
+                  ) : kitResult.kit_subtitle ? (
                     <p className="text-center font-serif-sc text-[12px] tracking-[0.25em] text-primary/70">
                       {kitResult.kit_subtitle}
                     </p>
-                  )}
+                  ) : null}
                   {kitResult.kit_content && (
                     <div className="space-y-3">
                       {kitResult.kit_content.split(/\n+/).map((p, i) => (
