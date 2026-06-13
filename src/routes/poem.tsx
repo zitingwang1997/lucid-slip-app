@@ -228,31 +228,28 @@ function PoemPage() {
 
   if (!slip) return null;
 
-  const poemParts =
-    (slip.poem ?? "")
-      .match(/[^，。！？；]+[，。！？；]?/g)
-      ?.map((s) => s.trim())
-      .filter(Boolean) ?? [];
-
-  const normalizePoemColumn = (text: string) => {
-    if (!text) return "";
-    return /[，。！？；]$/.test(text) ? text : `${text}。`;
-  };
-
   const poemSentences =
     (slip.poem ?? "")
       .match(/[^。！？]+[。！？]?/g)
       ?.map((s) => s.trim())
       .filter(Boolean) ?? [];
 
-  const rightColumn = normalizePoemColumn(poemSentences[0] ?? "");
-  const leftColumn = normalizePoemColumn(poemSentences.slice(1).join(""));
+  const midpoint = Math.ceil(poemSentences.length / 2);
+
+  const rightColumn = normalizePoemColumn(poemSentences.slice(0, midpoint).join(""));
+
+  const leftColumn = normalizePoemColumn(poemSentences.slice(midpoint).join(""));
+
+  console.log("poemSentences", poemSentences);
+  console.log("rightColumn", rightColumn);
+  console.log("leftColumn", leftColumn);
+
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
   const poemFontSize = longestColumnLength > 22 ? "2.2cqi" : longestColumnLength > 18 ? "2.4cqi" : "2.9cqi";
 
   const realm = String(slip.realm ?? "").trim();
-  const realmLevelMatch = realm.match(/(上吉|中吉|下吉|大吉|小吉|平|凶)/);
+  const realmLevelMatch = realm.match(/(上吉|吉|中平|平|下)/);
   const realmLevel = realmLevelMatch?.[1] ?? "";
   const realmName = realmLevel
     ? realm
