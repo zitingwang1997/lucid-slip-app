@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
+import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
 import { checkSameDayQuestion } from "@/lib/similarity.functions";
@@ -111,7 +112,7 @@ function QuestionPage() {
   };
 
   return (
-    <Shell intensity={0} overlayHeader>
+    <><ParticleSplashIntro /><Shell intensity={0} overlayHeader>
       <main
         ref={mainRef}
         className="relative z-10 flex h-[calc(100vh-4.5rem)] flex-col justify-between px-10 slow-fade-in"
@@ -203,6 +204,6 @@ function QuestionPage() {
           </button>
         </div>
       </main>
-    </Shell>
+    </Shell></>
   );
 }
