@@ -268,6 +268,7 @@ function PoemPage() {
           {slip.image_url ? (
             <div
               className="relative mx-auto w-[88%] touch-none select-none cursor-pointer"
+              onContextMenu={(e) => e.preventDefault()}
               onPointerDown={(e) => {
                 (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
                 beginHold();
@@ -287,7 +288,14 @@ function PoemPage() {
                 alt={slip.title ?? "签"}
                 className="absolute inset-0 block h-full w-full select-none"
                 draggable={false}
-                style={{ objectFit: "contain" }}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{
+                  objectFit: "contain",
+                  WebkitTouchCallout: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
               />
 
               {/* Top-left: Chinese number */}
@@ -379,11 +387,8 @@ function PoemPage() {
                   strokeDasharray="1 1"
                   strokeDashoffset={awaitingInterpret ? 0 : 1 - holdProgress}
                   style={{
-                    filter:
-                      "drop-shadow(0 0 4px rgba(214,172,96,0.55)) drop-shadow(0 0 12px rgba(214,172,96,0.3))",
-                    transition: holding
-                      ? "stroke-dashoffset 90ms linear"
-                      : "stroke-dashoffset 500ms ease-out",
+                    filter: "drop-shadow(0 0 4px rgba(214,172,96,0.55)) drop-shadow(0 0 12px rgba(214,172,96,0.3))",
+                    transition: holding ? "stroke-dashoffset 90ms linear" : "stroke-dashoffset 500ms ease-out",
                     animation: awaitingInterpret ? "poem-edge-breath 2.4s ease-in-out infinite" : undefined,
                   }}
                 />
@@ -400,11 +405,7 @@ function PoemPage() {
           <div className="mt-8 flex w-full max-w-[340px] flex-col items-center gap-2 slow-fade-in">
             {interpretStatus === "error" ? (
               <>
-                {error && (
-                  <p className="font-serif-sc text-[11px] tracking-[0.25em] text-destructive/70">
-                    {error}
-                  </p>
-                )}
+                {error && <p className="font-serif-sc text-[11px] tracking-[0.25em] text-destructive/70">{error}</p>}
                 <button
                   onClick={retryInterpret}
                   className="font-serif-sc text-[12px] tracking-[0.35em] text-foreground/45 transition-colors hover:text-foreground/70"
