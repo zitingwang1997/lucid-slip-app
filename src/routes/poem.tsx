@@ -280,21 +280,23 @@ function PoemPage() {
                 aspectRatio: "848 / 1489",
                 maxWidth: 460,
                 containerType: "inline-size",
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
                 filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
               }}
             >
-              <img
-                src={slip.image_url}
-                alt={slip.title ?? "签"}
-                className="absolute inset-0 block h-full w-full select-none"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
+              <div
+                aria-label={slip.title ?? "签"}
+                className="pointer-events-none absolute inset-0 h-full w-full select-none"
                 style={{
-                  objectFit: "contain",
+                  backgroundImage: `url(${slip.image_url})`,
+                  backgroundSize: "contain",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
                   WebkitTouchCallout: "none",
                   WebkitUserSelect: "none",
                   userSelect: "none",
-                  pointerEvents: "none",
                 }}
               />
 
