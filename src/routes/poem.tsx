@@ -337,7 +337,7 @@ function PoemPage() {
               {/* Right vertical column: lines 1-2 (rightmost line first) */}
               <div
                 className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ right: "7%", top: "24%", height: "68%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+                style={{ right: "7%", top: "24%", height: "75%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
                 <span
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
@@ -358,7 +358,7 @@ function PoemPage() {
               {/* Left vertical column: lines 3-4 (rightmost line first) */}
               <div
                 className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ left: "7%", top: "24%", height: "68%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+                style={{ left: "7%", top: "24%", height: "75%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
                 <span
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
