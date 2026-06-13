@@ -38,7 +38,14 @@ function PoemPage() {
   const [revealed, setRevealed] = useState(false);
   const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [holding, setHolding] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [awaitingInterpret, setAwaitingInterpret] = useState(false);
   const inflight = useRef(false);
+  const holdRaf = useRef<number | null>(null);
+  const holdStart = useRef<number>(0);
+  const holdCompleted = useRef(false);
+  const HOLD_MS = 1800;
 
   const runInterpret = useCallback(
     async (s: SelectedSlip, q: string) => {
@@ -154,24 +161,72 @@ function PoemPage() {
     return () => window.clearTimeout(t);
   }, [navigate, runInterpret]);
 
-  if (!slip) return null;
-
-  const onPrimary = () => {
-    if (interpretStatus === "success") {
+  // Auto-navigate when interpretation finishes AFTER user already completed the hold.
+  useEffect(() => {
+    if (awaitingInterpret && interpretStatus === "success") {
       navigate({ to: "/interpret" });
-    } else if (interpretStatus === "error") {
-      const q = getUserQuestion();
-      if (slip && q) void runInterpret(slip, q);
     }
+  }, [awaitingInterpret, interpretStatus, navigate]);
+
+  const stopHoldRaf = () => {
+    if (holdRaf.current != null) {
+      cancelAnimationFrame(holdRaf.current);
+      holdRaf.current = null;
+    }
+  };
+
+  const beginHold = () => {
+    if (holdCompleted.current) return;
+    if (interpretStatus === "error") return;
+    setHolding(true);
+    holdStart.current = 0;
+    stopHoldRaf();
+    const tick = (ts: number) => {
+      if (!holdStart.current) holdStart.current = ts;
+      const p = Math.min(1, (ts - holdStart.current) / HOLD_MS);
+      setHoldProgress(p);
+      if (p >= 1) {
+        holdCompleted.current = true;
+        setHolding(false);
+        if (interpretStatus === "success") {
+          navigate({ to: "/interpret" });
+        } else {
+          setAwaitingInterpret(true);
+        }
+        return;
+      }
+      holdRaf.current = requestAnimationFrame(tick);
+    };
+    holdRaf.current = requestAnimationFrame(tick);
+  };
+
+  const endHold = () => {
+    if (holdCompleted.current) return;
+    setHolding(false);
+    stopHoldRaf();
+    // gentle decay back to 0
+    const start = performance.now();
+    const from = holdProgress;
+    const decayMs = Math.max(300, from * 700);
+    const decayTick = (ts: number) => {
+      const t = Math.min(1, (ts - start) / decayMs);
+      const v = from * (1 - t);
+      setHoldProgress(v);
+      if (t < 1) holdRaf.current = requestAnimationFrame(decayTick);
+    };
+    holdRaf.current = requestAnimationFrame(decayTick);
   };
 
   const onRestart = () => {
     navigate({ to: "/" });
   };
 
-  const buttonLabel =
-    interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
-  const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
+  const retryInterpret = () => {
+    const q = getUserQuestion();
+    if (slip && q) void runInterpret(slip, q);
+  };
+
+  if (!slip) return null;
 
   const poemParts =
     (slip.poem ?? "")
@@ -212,7 +267,14 @@ function PoemPage() {
         >
           {slip.image_url ? (
             <div
-              className="relative mx-auto w-[88%]"
+              className="relative mx-auto w-[88%] touch-none select-none cursor-pointer"
+              onPointerDown={(e) => {
+                (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+                beginHold();
+              }}
+              onPointerUp={endHold}
+              onPointerLeave={endHold}
+              onPointerCancel={endHold}
               style={{
                 aspectRatio: "848 / 1489",
                 maxWidth: 460,
@@ -290,6 +352,42 @@ function PoemPage() {
                   {leftColumn}
                 </span>
               </div>
+
+              {/* Golden ritual light tracing the card edge during long-press */}
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                viewBox="0 0 848 1489"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                style={{
+                  opacity: holdProgress > 0 || awaitingInterpret ? 1 : 0,
+                  transition: "opacity 600ms ease",
+                }}
+              >
+                <rect
+                  x="10"
+                  y="10"
+                  width="828"
+                  height="1469"
+                  rx="20"
+                  ry="20"
+                  fill="none"
+                  stroke="rgba(214,172,96,0.9)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength={1}
+                  strokeDasharray="1 1"
+                  strokeDashoffset={awaitingInterpret ? 0 : 1 - holdProgress}
+                  style={{
+                    filter:
+                      "drop-shadow(0 0 4px rgba(214,172,96,0.55)) drop-shadow(0 0 12px rgba(214,172,96,0.3))",
+                    transition: holding
+                      ? "stroke-dashoffset 90ms linear"
+                      : "stroke-dashoffset 500ms ease-out",
+                    animation: awaitingInterpret ? "poem-edge-breath 2.4s ease-in-out infinite" : undefined,
+                  }}
+                />
+              </svg>
             </div>
           ) : (
             <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
@@ -299,25 +397,38 @@ function PoemPage() {
         </div>
 
         {revealed && (
-          <div className="mt-10 flex w-full max-w-[340px] flex-col items-center gap-3 slow-fade-in">
-            <button
-              onClick={onPrimary}
-              disabled={buttonDisabled}
-              className="w-full rounded-full border border-primary/40 bg-gradient-to-b from-primary/15 to-transparent py-3.5 text-center font-serif-sc text-sm tracking-[0.5em] text-ivory transition-all hover:border-primary/70 disabled:opacity-60"
-              style={{ boxShadow: "0 0 28px oklch(0.74 0.13 55 / 0.15)" }}
-            >
-              {buttonLabel}
-            </button>
-            {interpretStatus === "error" && (
+          <div className="mt-8 flex w-full max-w-[340px] flex-col items-center gap-2 slow-fade-in">
+            {interpretStatus === "error" ? (
               <>
-                {error && <p className="font-serif-sc text-[11px] tracking-[0.2em] text-destructive/80">{error}</p>}
+                {error && (
+                  <p className="font-serif-sc text-[11px] tracking-[0.25em] text-destructive/70">
+                    {error}
+                  </p>
+                )}
+                <button
+                  onClick={retryInterpret}
+                  className="font-serif-sc text-[12px] tracking-[0.35em] text-foreground/45 transition-colors hover:text-foreground/70"
+                >
+                  重 新 解 签
+                </button>
                 <button
                   onClick={onRestart}
-                  className="mt-1 rounded-full border border-foreground/20 px-6 py-2 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/70 transition-colors hover:border-foreground/40 hover:text-foreground"
+                  className="mt-1 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/30 transition-colors hover:text-foreground/55"
                 >
                   重 启 仪 式
                 </button>
               </>
+            ) : (
+              <div
+                className="flex flex-col items-center font-serif-sc text-[12px] leading-[1.9] tracking-[0.5em] text-foreground/40"
+                style={{
+                  opacity: awaitingInterpret ? 0.7 : 1,
+                  transition: "opacity 600ms ease",
+                }}
+              >
+                <span>长 按 签 文</span>
+                <span>静 观 其 意</span>
+              </div>
             )}
           </div>
         )}
