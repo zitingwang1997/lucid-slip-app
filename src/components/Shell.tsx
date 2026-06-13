@@ -14,14 +14,12 @@ export function Shell({
   overlayHeader?: boolean;
 }) {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <div className="relative min-h-screen w-full overflow-hidden max-w-[100vw]">
       <Ambient intensity={intensity} />
 
       <div
         className={
-          overlayHeader
-            ? "relative z-10 min-h-screen w-full"
-            : "relative z-10 flex min-h-screen w-full flex-col"
+          overlayHeader ? "relative z-10 min-h-screen w-full" : "relative z-10 flex min-h-screen w-full flex-col"
         }
       >
         <header
@@ -36,9 +34,7 @@ export function Shell({
               className="inline-block h-1.5 w-1.5 rounded-full bg-primary breathe"
               style={{ boxShadow: "0 0 12px var(--primary)" }}
             />
-            <span className="font-serif-display text-sm tracking-[0.35em] uppercase text-foreground/70">
-              一签
-            </span>
+            <span className="font-serif-display text-sm tracking-[0.35em] uppercase text-foreground/70">一签</span>
           </Link>
 
           {showTemple && (
