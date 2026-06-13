@@ -372,7 +372,7 @@ function PoemPage() {
                 }}
               >
                 <div
-                  className="absolute inset-0 rounded-[28px]"
+                  className="absolute inset-0 rounded-[0px]"
                   style={{
                     background: `radial-gradient(circle at center, rgba(214,172,96,${0.18 * holdProgress}) 0%, rgba(214,172,96,${0.08 * holdProgress}) 34%, transparent 68%)`,
                     boxShadow: `inset 0 0 ${24 + holdProgress * 40}px rgba(214,172,96,${0.18 + holdProgress * 0.22})`,
