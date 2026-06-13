@@ -278,19 +278,26 @@ function InterpretPage() {
 
   const kitResult = openItem ? kitCache[openItem.key] : undefined;
 
-  const poemParts =
-    (slip.poem ?? "")
-      .match(/[^，。！？；]+[，。！？；]?/g)
-      ?.map((s) => s.trim())
-      .filter(Boolean) ?? [];
-
   const normalizePoemColumn = (text: string) => {
     if (!text) return "";
     return /[，。！？；]$/.test(text) ? text : `${text}。`;
   };
 
-  const rightColumn = normalizePoemColumn(poemParts.slice(0, 2).join(""));
-  const leftColumn = normalizePoemColumn(poemParts.slice(2, 4).join(""));
+  const poemSentences =
+    (slip.poem ?? "")
+      .match(/[^。！？]+[。！？]?/g)
+      ?.map((s) => s.trim())
+      .filter(Boolean) ?? [];
+
+  const midpoint = Math.ceil(poemSentences.length / 2);
+
+  const rightColumn = normalizePoemColumn(poemSentences.slice(0, midpoint).join(""));
+
+  const leftColumn = normalizePoemColumn(poemSentences.slice(midpoint).join(""));
+
+  const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
+
+  const poemFontSize = longestColumnLength > 22 ? "2.2cqi" : longestColumnLength > 18 ? "2.4cqi" : "2.9cqi";
 
   return (
     <Shell intensity={0.4}>
@@ -352,7 +359,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     right: "7%",
-                    top: "20%",
+                    top: "24%",
+                    height: "68%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
@@ -362,7 +370,8 @@ function InterpretPage() {
                       writingMode: "vertical-rl",
                       textOrientation: "mixed",
                       letterSpacing: "0.12em",
-                      fontSize: "2.4cqi",
+                      fontSize: poemFontSize,
+                      fontWeight: 600,
                       lineHeight: 1.25,
                     }}
                   >
@@ -374,7 +383,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     left: "7%",
-                    top: "20%",
+                    top: "24%",
+                    height: "68%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
@@ -384,7 +394,8 @@ function InterpretPage() {
                       writingMode: "vertical-rl",
                       textOrientation: "mixed",
                       letterSpacing: "0.12em",
-                      fontSize: "2.4cqi",
+                      fontSize: poemFontSize,
+                      fontWeight: 600,
                       lineHeight: 1.25,
                     }}
                   >
