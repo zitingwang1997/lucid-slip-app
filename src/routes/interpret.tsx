@@ -276,20 +276,6 @@ function InterpretPage() {
   const xing = result?.xing_content ?? "";
   const disclaimer = result?.disclaimer ?? "我不能替你决定命运，\n但我可以陪你看清此刻。";
 
-  const poemParts =
-    (slip.poem ?? "")
-      .match(/[^，。！？；]+[，。！？；]?/g)
-      ?.map((s) => s.trim())
-      .filter(Boolean) ?? [];
-
-  const normalizePoemColumn = (text: string) => {
-    if (!text) return "";
-    return /[，。！？；]$/.test(text) ? text : `${text}。`;
-  };
-
-  const rightColumn = normalizePoemColumn(poemParts.slice(0, 2).join(""));
-  const leftColumn = normalizePoemColumn(poemParts.slice(2, 4).join(""));
-
   const kitResult = openItem ? kitCache[openItem.key] : undefined;
 
   return (
@@ -298,95 +284,44 @@ function InterpretPage() {
         <section className="slow-fade-in pt-2">
           <div className="mx-auto w-full" style={{ maxWidth: 520 }}>
             {slip.image_url ? (
-              <div
-                className="relative mx-auto w-[88%]"
-                style={{
-                  aspectRatio: "848 / 1489",
-                  maxWidth: 460,
-                  containerType: "inline-size",
-                  filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
-                }}
-              >
+              <div className="relative">
                 <img
                   src={slip.image_url}
-                  alt={slip.title ?? "签"}
-                  className="absolute inset-0 block h-full w-full select-none"
+                  alt="签"
+                  className="block select-none"
                   draggable={false}
-                  style={{ objectFit: "contain" }}
+                  style={{
+                    width: "100%",
+                    maxWidth: 520,
+                    height: "auto",
+                    objectFit: "contain",
+                    filter:
+                      "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                  }}
                 />
 
-                <div
-                  className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
-                  style={{
-                    left: "8%",
-                    top: "3.8%",
-                    fontSize: "3.8cqi",
-                    fontWeight: 500,
-                    letterSpacing: "0.08em",
-                    lineHeight: 1.15,
-                  }}
-                >
-                  {slip.number}
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
-                  style={{
-                    right: "8%",
-                    top: "3.8%",
-                    lineHeight: 1.15,
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-row-reverse"
-                  style={{
-                    right: "7%",
-                    top: "20%",
-                    gap: "clamp(4px, 1.6cqi, 14px)",
-                  }}
-                >
-                  <span
-                    className="font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: "3.1cqi",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {rightColumn}
-                  </span>
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-row-reverse"
-                  style={{
-                    left: "7%",
-                    top: "20%",
-                    gap: "clamp(4px, 1.6cqi, 14px)",
-                  }}
-                >
-                  <span
-                    className="font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: "3.1cqi",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {leftColumn}
-                  </span>
+                <div className="pointer-events-none absolute bottom-[16%] right-[12%] flex flex-row-reverse gap-3">
+                  {slip.poem
+                    ?.split(/[，。！？；\n]/)
+                    .filter(Boolean)
+                    .map((line, index) => (
+                      <span
+                        key={index}
+                        className="poem-line-reveal font-serif-sc text-[13px] leading-loose text-[rgba(55,38,24,0.72)]"
+                        style={{
+                          writingMode: "vertical-rl",
+                          textOrientation: "mixed",
+                          letterSpacing: "0.16em",
+                          animationDelay: `${0.8 + index * 0.45}s`,
+                        }}
+                      >
+                        {line}
+                      </span>
+                    ))}
                 </div>
               </div>
             ) : (
-              <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
+              <div className="flex aspect-[2/3] items-center justify-center rounded-[26px] border border-border/40 font-serif-sc text-sm text-foreground/45">
                 签面缺失
               </div>
             )}
