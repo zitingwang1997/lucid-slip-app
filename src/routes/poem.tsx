@@ -352,6 +352,42 @@ function PoemPage() {
                   {leftColumn}
                 </span>
               </div>
+
+              {/* Golden ritual light tracing the card edge during long-press */}
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                viewBox="0 0 848 1489"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                style={{
+                  opacity: holdProgress > 0 || awaitingInterpret ? 1 : 0,
+                  transition: "opacity 600ms ease",
+                }}
+              >
+                <rect
+                  x="10"
+                  y="10"
+                  width="828"
+                  height="1469"
+                  rx="20"
+                  ry="20"
+                  fill="none"
+                  stroke="rgba(214,172,96,0.9)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength={1}
+                  strokeDasharray="1 1"
+                  strokeDashoffset={awaitingInterpret ? 0 : 1 - holdProgress}
+                  style={{
+                    filter:
+                      "drop-shadow(0 0 4px rgba(214,172,96,0.55)) drop-shadow(0 0 12px rgba(214,172,96,0.3))",
+                    transition: holding
+                      ? "stroke-dashoffset 90ms linear"
+                      : "stroke-dashoffset 500ms ease-out",
+                    animation: awaitingInterpret ? "poem-edge-breath 2.4s ease-in-out infinite" : undefined,
+                  }}
+                />
+              </svg>
             </div>
           ) : (
             <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
