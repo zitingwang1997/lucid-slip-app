@@ -19,7 +19,7 @@ export function Ambient({ intensity = 0.6, showParticles = true }: AmbientProps)
   }, [intensity]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden max-w-full">
       <div className="ambient-smoke" />
       {showParticles &&
         particles.map((p) => (
