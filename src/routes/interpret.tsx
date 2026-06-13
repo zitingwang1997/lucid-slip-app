@@ -299,7 +299,8 @@ function InterpretPage() {
           <div className="mx-auto w-full" style={{ maxWidth: 520 }}>
             {slip.image_url ? (
               <div
-                className="relative mx-auto w-[88%]"
+                className="relative mx-auto w-[88%] select-none"
+                onContextMenu={(e) => e.preventDefault()}
                 style={{
                   aspectRatio: "848 / 1489",
                   maxWidth: 460,
@@ -307,12 +308,18 @@ function InterpretPage() {
                   filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
                 }}
               >
-                <img
-                  src={slip.image_url}
-                  alt={slip.title ?? "签"}
-                  className="absolute inset-0 block h-full w-full select-none"
-                  draggable={false}
-                  style={{ objectFit: "contain" }}
+                <div
+                  aria-label={slip.title ?? "签"}
+                  className="pointer-events-none absolute inset-0 h-full w-full select-none"
+                  style={{
+                    backgroundImage: `url(${slip.image_url})`,
+                    backgroundSize: "contain",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    WebkitTouchCallout: "none",
+                    WebkitUserSelect: "none",
+                    userSelect: "none",
+                  }}
                 />
 
                 <div
