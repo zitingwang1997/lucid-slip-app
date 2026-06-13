@@ -226,6 +226,7 @@ function PoemPage() {
     if (slip && q) void runInterpret(slip, q);
   };
 
+  if (!slip) return null;
 
   const poemParts =
     (slip.poem ?? "")
