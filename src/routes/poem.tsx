@@ -334,7 +334,7 @@ function PoemPage() {
                     writingMode: "vertical-rl",
                     textOrientation: "mixed",
                     letterSpacing: "0.12em",
-                    fontSize: "3.1cqi",
+                    fontSize: "2.4cqi",
                     lineHeight: 1.25,
                     animationDelay: "1.2s",
                   }}
@@ -354,7 +354,7 @@ function PoemPage() {
                     writingMode: "vertical-rl",
                     textOrientation: "mixed",
                     letterSpacing: "0.12em",
-                    fontSize: "3.1cqi",
+                    fontSize: "2.4cqi",
                     lineHeight: 1.25,
                     animationDelay: "3.2s",
                   }}
