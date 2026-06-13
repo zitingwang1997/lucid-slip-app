@@ -95,39 +95,17 @@
 }
 
 @layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
   * {
     border-color: var(--color-border);
-  }
-
-  html {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
   }
 
   html,
   body,
   #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
     background-color: var(--color-background);
     color: var(--color-foreground);
     min-height: 100vh;
   }
-
-  img,
-  video,
-  canvas,
-  svg {
-    max-width: 100%;
-  }
-
 
   body {
     font-family: var(--font-sans);
