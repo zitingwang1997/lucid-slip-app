@@ -38,7 +38,14 @@ function PoemPage() {
   const [revealed, setRevealed] = useState(false);
   const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [holding, setHolding] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [awaitingInterpret, setAwaitingInterpret] = useState(false);
   const inflight = useRef(false);
+  const holdRaf = useRef<number | null>(null);
+  const holdStart = useRef<number>(0);
+  const holdCompleted = useRef(false);
+  const HOLD_MS = 1800;
 
   const runInterpret = useCallback(
     async (s: SelectedSlip, q: string) => {
