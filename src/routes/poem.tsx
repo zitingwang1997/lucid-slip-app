@@ -363,38 +363,34 @@ function PoemPage() {
                 </span>
               </div>
 
-              {/* Golden ritual light tracing the card edge during long-press */}
-              <svg
-                className="pointer-events-none absolute inset-0 h-full w-full"
-                viewBox="0 0 848 1489"
-                preserveAspectRatio="none"
-                aria-hidden="true"
+              {/* Golden hold feedback */}
+              <div
+                className="pointer-events-none absolute inset-0"
                 style={{
                   opacity: holdProgress > 0 || awaitingInterpret ? 1 : 0,
-                  transition: "opacity 600ms ease",
+                  transition: "opacity 240ms ease",
                 }}
               >
-                <rect
-                  x="10"
-                  y="10"
-                  width="828"
-                  height="1469"
-                  rx="20"
-                  ry="20"
-                  fill="none"
-                  stroke="rgba(214,172,96,0.9)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  pathLength={1}
-                  strokeDasharray="1 1"
-                  strokeDashoffset={awaitingInterpret ? 0 : 1 - holdProgress}
+                <div
+                  className="absolute inset-0 rounded-[28px]"
                   style={{
-                    filter: "drop-shadow(0 0 4px rgba(214,172,96,0.55)) drop-shadow(0 0 12px rgba(214,172,96,0.3))",
-                    transition: holding ? "stroke-dashoffset 90ms linear" : "stroke-dashoffset 500ms ease-out",
-                    animation: awaitingInterpret ? "poem-edge-breath 2.4s ease-in-out infinite" : undefined,
+                    background: `radial-gradient(circle at center, rgba(214,172,96,${0.18 * holdProgress}) 0%, rgba(214,172,96,${0.08 * holdProgress}) 34%, transparent 68%)`,
+                    boxShadow: `inset 0 0 ${24 + holdProgress * 40}px rgba(214,172,96,${0.18 + holdProgress * 0.22})`,
                   }}
                 />
-              </svg>
+
+                <div
+                  className="absolute left-1/2 top-1/2 rounded-full"
+                  style={{
+                    width: `${18 + holdProgress * 42}px`,
+                    height: `${18 + holdProgress * 42}px`,
+                    transform: "translate(-50%, -50%)",
+                    background: "rgba(214,172,96,0.72)",
+                    filter: `blur(${10 + holdProgress * 10}px)`,
+                    boxShadow: `0 0 ${30 + holdProgress * 50}px rgba(214,172,96,0.65)`,
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
