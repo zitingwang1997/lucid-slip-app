@@ -3,11 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { Shell } from "@/components/Shell";
-import {
-  clearRitualSession,
-  getTodayHistory,
-  setUserQuestion,
-} from "@/lib/fortune-store";
+import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
 import { checkSameDayQuestion } from "@/lib/similarity.functions";
 import { Mic } from "lucide-react";
 
@@ -152,8 +148,9 @@ function QuestionPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="输入你的困惑..."
-              className="ritual-question-input w-full border-0 bg-transparent text-center font-serif-sc text-[14px] focus:outline-none"
+              className="ritual-question-input w-full border-0 bg-transparent text-center font-serif-sc text-[16px] focus:outline-none"
               style={{
+                fontSize: "16px",
                 letterSpacing: "0.12em",
                 padding: "8px 0",
                 color: "rgba(255, 255, 255, 0.94)",
