@@ -161,24 +161,71 @@ function PoemPage() {
     return () => window.clearTimeout(t);
   }, [navigate, runInterpret]);
 
-  if (!slip) return null;
-
-  const onPrimary = () => {
-    if (interpretStatus === "success") {
+  // Auto-navigate when interpretation finishes AFTER user already completed the hold.
+  useEffect(() => {
+    if (awaitingInterpret && interpretStatus === "success") {
       navigate({ to: "/interpret" });
-    } else if (interpretStatus === "error") {
-      const q = getUserQuestion();
-      if (slip && q) void runInterpret(slip, q);
     }
+  }, [awaitingInterpret, interpretStatus, navigate]);
+
+  const stopHoldRaf = () => {
+    if (holdRaf.current != null) {
+      cancelAnimationFrame(holdRaf.current);
+      holdRaf.current = null;
+    }
+  };
+
+  const beginHold = () => {
+    if (holdCompleted.current) return;
+    if (interpretStatus === "error") return;
+    setHolding(true);
+    holdStart.current = 0;
+    stopHoldRaf();
+    const tick = (ts: number) => {
+      if (!holdStart.current) holdStart.current = ts;
+      const p = Math.min(1, (ts - holdStart.current) / HOLD_MS);
+      setHoldProgress(p);
+      if (p >= 1) {
+        holdCompleted.current = true;
+        setHolding(false);
+        if (interpretStatus === "success") {
+          navigate({ to: "/interpret" });
+        } else {
+          setAwaitingInterpret(true);
+        }
+        return;
+      }
+      holdRaf.current = requestAnimationFrame(tick);
+    };
+    holdRaf.current = requestAnimationFrame(tick);
+  };
+
+  const endHold = () => {
+    if (holdCompleted.current) return;
+    setHolding(false);
+    stopHoldRaf();
+    // gentle decay back to 0
+    const start = performance.now();
+    const from = holdProgress;
+    const decayMs = Math.max(300, from * 700);
+    const decayTick = (ts: number) => {
+      const t = Math.min(1, (ts - start) / decayMs);
+      const v = from * (1 - t);
+      setHoldProgress(v);
+      if (t < 1) holdRaf.current = requestAnimationFrame(decayTick);
+    };
+    holdRaf.current = requestAnimationFrame(decayTick);
   };
 
   const onRestart = () => {
     navigate({ to: "/" });
   };
 
-  const buttonLabel =
-    interpretStatus === "loading" ? "解 签 生 成 中…" : interpretStatus === "error" ? "重 新 解 签" : "解 签";
-  const buttonDisabled = interpretStatus === "loading" || interpretStatus === "idle";
+  const retryInterpret = () => {
+    const q = getUserQuestion();
+    if (slip && q) void runInterpret(slip, q);
+  };
+
 
   const poemParts =
     (slip.poem ?? "")
