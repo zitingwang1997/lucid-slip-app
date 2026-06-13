@@ -239,8 +239,14 @@ function PoemPage() {
     return /[，。！？；]$/.test(text) ? text : `${text}。`;
   };
 
-  const rightColumn = normalizePoemColumn(poemParts.slice(0, 2).join(""));
-  const leftColumn = normalizePoemColumn(poemParts.slice(2, 4).join(""));
+  const poemSentences =
+    (slip.poem ?? "")
+      .match(/[^。！？]+[。！？]?/g)
+      ?.map((s) => s.trim())
+      .filter(Boolean) ?? [];
+
+  const rightColumn = normalizePoemColumn(poemSentences[0] ?? "");
+  const leftColumn = normalizePoemColumn(poemSentences.slice(1).join(""));
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
   const poemFontSize = longestColumnLength > 22 ? "2.2cqi" : longestColumnLength > 18 ? "2.4cqi" : "2.9cqi";
