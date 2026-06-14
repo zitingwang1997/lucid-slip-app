@@ -299,14 +299,14 @@ function InterpretPage() {
 
   const poemFontSize =
     longestColumnLength > 22
-      ? "1.6cqi"
+      ? "2.0cqi"
       : longestColumnLength > 20
-        ? "1.8cqi"
+        ? "2.2cqi"
         : longestColumnLength > 18
-          ? "2.2cqi"
+          ? "2.4cqi"
           : longestColumnLength > 14
-            ? "2.4cqi"
-            : "2.6cqi";
+            ? "2.6cqi"
+            : "2.7cqi";
 
   return (
     <Shell intensity={0.4}>
