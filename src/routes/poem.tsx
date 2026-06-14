@@ -260,7 +260,7 @@ function PoemPage() {
           ? "2.4cqi"
           : longestColumnLength > 14
             ? "2.6cqi"
-            : "2.7cqi";
+            : "2.6cqi";
 
   const realm = String(slip.realm ?? "").trim();
   const realmLevelMatch = realm.match(/(上吉|吉|中平|平|下)/);
