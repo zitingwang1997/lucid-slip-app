@@ -303,10 +303,10 @@ function InterpretPage() {
       : longestColumnLength > 20
         ? "1.8cqi"
         : longestColumnLength > 18
-          ? "2.1cqi"
+          ? "2.2cqi"
           : longestColumnLength > 14
             ? "2.4cqi"
-            : "2.5cqi";
+            : "2.6cqi";
 
   return (
     <Shell intensity={0.4}>
