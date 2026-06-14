@@ -359,8 +359,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     right: "7%",
-                    top: "24%",
-                    height: "68%",
+                    top: "20%",
+                    height: "72%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
@@ -383,8 +383,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     left: "7%",
-                    top: "24%",
-                    height: "68%",
+                    top: "20%",
+                    height: "72%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
