@@ -252,15 +252,15 @@ function PoemPage() {
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
   const poemFontSize =
-    longestColumnLength > 26
-      ? "1.8cqi"
-      : longestColumnLength > 22
-        ? "2.0cqi"
+    longestColumnLength > 22
+      ? "1.6cqi"
+      : longestColumnLength > 20
+        ? "1.8cqi"
         : longestColumnLength > 18
           ? "2.2cqi"
           : longestColumnLength > 14
             ? "2.4cqi"
-            : "2.7cqi";
+            : "2.6cqi";
 
   const realm = String(slip.realm ?? "").trim();
   const realmLevelMatch = realm.match(/(上吉|吉|中平|平|下)/);
