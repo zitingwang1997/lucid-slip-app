@@ -251,7 +251,16 @@ function PoemPage() {
 
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
-  const poemFontSize = longestColumnLength > 22 ? "2.2cqi" : longestColumnLength > 18 ? "2.4cqi" : "2.9cqi";
+  const poemFontSize =
+  longestColumnLength > 26
+    ? "1.8cqi"
+    : longestColumnLength > 22
+      ? "2.0cqi"
+      : longestColumnLength > 18
+        ? "2.2cqi"
+        : longestColumnLength > 14
+          ? "2.4cqi"
+          : "2.7cqi";
 
   const realm = String(slip.realm ?? "").trim();
   const realmLevelMatch = realm.match(/(上吉|吉|中平|平|下)/);
@@ -337,7 +346,7 @@ function PoemPage() {
               {/* Right vertical column: lines 1-2 (rightmost line first) */}
               <div
                 className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ right: "7%", top: "20%", height: "72%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+                style={{ right: "7%", top: "16%", height: "76%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
                 <span
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
@@ -358,7 +367,7 @@ function PoemPage() {
               {/* Left vertical column: lines 3-4 (rightmost line first) */}
               <div
                 className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ left: "7%", top: "20%", height: "72%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+                style={{ left: "7%", top: "16%", height: "76%", gap: "clamp(4px, 1.6cqi, 14px)" }}
               >
                 <span
                   className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"

@@ -17,12 +17,12 @@ type Lobe = { freq: number; amp: number; phase: number };
 // baseR ×1.8, alpha ×2.5, lobeAmp ×1.5
 // breathSpd / breathPhase / rotSpd untouched (reference HTML values)
 const AMOEBAS: Amoeba[] = [
-  { ox: 0,   oy: 0,   rotSpd:  0.00018,  breathSpd: 0.0042, breathPhase: 0,   baseR: 94, alpha: 0.22, lobeAmp: 0.45 },
-  { ox: 14,  oy: -10, rotSpd: -0.00012,  breathSpd: 0.0031, breathPhase: 1.8, baseR: 79, alpha: 0.16, lobeAmp: 0.38 },
-  { ox: -12, oy: 8,   rotSpd:  0.00022,  breathSpd: 0.0055, breathPhase: 3.2, baseR: 68, alpha: 0.14, lobeAmp: 0.52 },
-  { ox: 6,   oy: 16,  rotSpd: -0.00008,  breathSpd: 0.0038, breathPhase: 5.0, baseR: 83, alpha: 0.18, lobeAmp: 0.23 },
-  { ox: -18, oy: -6,  rotSpd:  0.00015,  breathSpd: 0.0048, breathPhase: 2.4, baseR: 72, alpha: 0.15, lobeAmp: 0.30 },
-  { ox: 10,  oy: -18, rotSpd: -0.00020,  breathSpd: 0.0035, breathPhase: 4.1, baseR: 65, alpha: 0.18, lobeAmp: 0.36 },
+  { ox: 0,   oy: 0,   rotSpd:  0.00012, breathSpd: 0.0038, breathPhase: 0,   baseR: 74, alpha: 0.11, lobeAmp: 0.62 },
+  { ox: 18,  oy: -12, rotSpd: -0.00010, breathSpd: 0.0029, breathPhase: 1.8, baseR: 64, alpha: 0.08, lobeAmp: 0.55 },
+  { ox: -16, oy: 10,  rotSpd:  0.00014, breathSpd: 0.0046, breathPhase: 3.2, baseR: 58, alpha: 0.075, lobeAmp: 0.68 },
+  { ox: 8,   oy: 18,  rotSpd: -0.00008, breathSpd: 0.0033, breathPhase: 5.0, baseR: 68, alpha: 0.085, lobeAmp: 0.45 },
+  { ox: -22, oy: -8,  rotSpd:  0.00011, breathSpd: 0.0041, breathPhase: 2.4, baseR: 60, alpha: 0.07, lobeAmp: 0.48 },
+  { ox: 12,  oy: -22, rotSpd: -0.00014, breathSpd: 0.0031, breathPhase: 4.1, baseR: 54, alpha: 0.075, lobeAmp: 0.52 },
 ];
 
 const LOBES: Lobe[] = [
@@ -35,12 +35,11 @@ const LOBES: Lobe[] = [
 
 // innermost alphaM changed 0.10 → 0.18
 const GLOW_LAYERS = [
-  { scale: 2.7, alphaM: 0.003 },
-  { scale: 2.1, alphaM: 0.005 },
-  { scale: 1.65, alphaM: 0.007 },
-  { scale: 1.3, alphaM: 0.009 },
-  { scale: 1.05, alphaM: 0.011 },
-  { scale: 0.85,  alphaM: 0.013 },
+  { scale: 2.2, alphaM: 0.0014 },
+  { scale: 1.75, alphaM: 0.0022 },
+  { scale: 1.38, alphaM: 0.0032 },
+  { scale: 1.08, alphaM: 0.0042 },
+  { scale: 0.86,  alphaM: 0.0052 },
 ];
 
 // ---- FBM noise (unchanged) ----
@@ -260,9 +259,9 @@ if (lay.scale < 1.1) {
 ct.fillRect(0, 0, W, H);
 
       // breath signals (unchanged from reference HTML)
-      const breath  = (Math.sin(t * 0.0055)       + 1) * 0.5;
-      const breath2 = (Math.sin(t * 0.0031 + 1.4) + 1) * 0.5;
-      const bc = breath * 0.65 + breath2 * 0.35;
+      const breath  = (Math.sin(t * 0.0068)       + 1) * 0.5;
+      const breath2 = (Math.sin(t * 0.0038 + 1.4) + 1) * 0.5;
+      const bc = breath * 0.72 + breath2 * 0.28;
       const nt = t * 0.0008;
 
       // ---- particles (unchanged) ----
@@ -293,10 +292,10 @@ ct.fillRect(0, 0, W, H);
         let r: number;
         let g: number;
         let b: number;
-        if      (pzone[i] === 0) { r = 232; g = 215; b = 180; }
-        else if (pzone[i] === 1) { r = 196; g = 178; b = 140; }
-        else if (pzone[i] === 2) { r = 160; g = 143; b = 110; }
-        else                     { r = 136; g = 120; b = 90;  }
+        if      (pzone[i] === 0) { r = 210; g = 165; b = 85; }
+else if (pzone[i] === 1) { r = 185; g = 140; b = 65; }
+else if (pzone[i] === 2) { r = 155; g = 115; b = 50; }
+else                     { r = 125; g = 90;  b = 38; }
 
         if (sz > 0.65) {
           const gd = ct.createRadialGradient(ppx[i], ppy[i], 0, ppx[i], ppy[i], sz * 3.0);
@@ -318,23 +317,26 @@ ct.fillRect(0, 0, W, H);
 
       // ---- 6 amoebas ----
       ct.save();
-ct.globalCompositeOperation = "source-over";
-ct.globalAlpha = 0.55;
+ct.globalCompositeOperation = "screen";
+ct.globalAlpha = 0.32;
 for (const am of AMOEBAS) drawAmoeba(am);
 ct.restore();
 
-      // outer veil — radius breathes with bc
-      ct.save();
-      ct.globalCompositeOperation = "screen";
-      const veilR = (220 + bc * 80) * scale;
-      const veil = ct.createRadialGradient(HX, HY, 0, HX, HY, veilR);
-      veil.addColorStop(0,    "rgba(0,0,0,0)");
-      veil.addColorStop(0.5,  `rgba(100,84,58,${0.03  + bc * 0.035})`);
-      veil.addColorStop(0.82, `rgba(72,58,40,${0.05   + bc * 0.03})`);
-      veil.addColorStop(1,    "rgba(0,0,0,0)");
-      ct.fillStyle = veil;
-      ct.fillRect(0, 0, W, H);
-      ct.restore();
+      // soft breathing glow — no obvious circular ring
+ct.save();
+ct.globalCompositeOperation = "screen";
+
+const veilR = (170 + bc * 42) * scale;
+const veil = ct.createRadialGradient(HX, HY, 0, HX, HY, veilR);
+
+veil.addColorStop(0,    `rgba(210,170,105,${0.012 + bc * 0.012})`);
+veil.addColorStop(0.38, `rgba(150,105,62,${0.01 + bc * 0.01})`);
+veil.addColorStop(0.72, `rgba(90,62,38,${0.006 + bc * 0.006})`);
+veil.addColorStop(1,    "rgba(0,0,0,0)");
+
+ct.fillStyle = veil;
+ct.fillRect(0, 0, W, H);
+ct.restore();
 
       // 压四边融入背景
       const edge = ct.createRadialGradient(HX, HY, 0, HX, HY, Math.max(W, H) * 0.68);

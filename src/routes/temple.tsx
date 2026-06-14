@@ -107,39 +107,48 @@ function TemplePage() {
                       "0 20px 50px -25px oklch(0 0 0 / 0.6), 0 0 32px oklch(0.74 0.13 55 / 0.08)",
                   }}
                 >
-                  <div className="flex gap-4 p-4">
-                    <div className="shrink-0">
-                      {(e.slip?.image_url as string | undefined) ? (
-                        <img
-                          src={e.slip.image_url as string}
-                          alt="签"
-                          className="block h-28 w-20 rounded-md object-cover"
-                          draggable={false}
-                        />
-                      ) : (
-                        <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
-                          签面缺失
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] tracking-[0.35em] uppercase text-foreground/35">
-                        {formatDate(e.createdAt)}
-                      </p>
-                      {(slipNumber || slipTitle) && (
-                        <p className="mt-2 font-serif-sc text-[13px] tracking-[0.2em] text-ivory/85">
-                          {slipNumber ? `第 ${slipNumber} 签` : ""}
-                          {slipNumber && slipTitle ? " · " : ""}
-                          {slipTitle ?? ""}
-                        </p>
-                      )}
-                      {e.question && (
-                        <p className="mt-2 line-clamp-2 font-serif-sc text-[13px] leading-[1.7] text-foreground/65">
-                          {e.question}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <div className="flex gap-4 p-4 items-stretch">
+  <div className="shrink-0">
+    {(e.slip?.image_url as string | undefined) ? (
+      <img
+        src={e.slip.image_url as string}
+        alt="签"
+        className="block h-28 w-20 rounded-md object-cover"
+        draggable={false}
+      />
+    ) : (
+      <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
+        签面缺失
+      </div>
+    )}
+  </div>
+  <div className="min-w-0 flex-1 flex flex-col justify-between h-28">
+    <div>
+      <p className="text-[10px] tracking-[0.35em] uppercase text-foreground/35">
+        {formatDate(e.createdAt)}
+      </p>
+      {(slipNumber || slipTitle) && (
+        <p className="mt-1 font-serif-sc text-[13px] tracking-[0.2em] text-ivory/85">
+          {slipNumber ? `第 ${slipNumber} 签` : ""}
+          {slipNumber && slipTitle ? " · " : ""}
+          {slipTitle ?? ""}
+        </p>
+      )}
+    </div>
+    <div>
+      {e.question && (
+        <p className="line-clamp-1 font-serif-sc text-[11px] leading-[1.7] text-foreground/65">
+          「{e.question}」
+        </p>
+      )}
+      {e.slip?.poem && (
+        <p className="mt-0.5 line-clamp-2 font-serif-sc text-[11px] leading-[1.8] text-foreground/38">
+          {e.slip.poem}
+        </p>
+      )}
+    </div>
+  </div>
+</div>
                   <div className="border-t border-border/30 px-4 py-3">
                     {savedKits.length === 0 ? (
                       <p className="font-serif-sc text-[11px] tracking-[0.3em] text-foreground/35">

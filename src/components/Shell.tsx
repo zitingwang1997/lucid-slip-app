@@ -30,17 +30,18 @@ export function Shell({
           }
         >
           <Link to="/" className="flex items-center gap-2 text-foreground/80">
+          <span className="font-serif-display text-sm uppercase text-foreground/70">一</span>
             <span
-              className="inline-block h-1.5 w-1.5 rounded-full bg-primary breathe"
+              className="inline-block h-1.5 w-1.5 rounded-full bg-primary breathe mx-0.1"
               style={{ boxShadow: "0 0 12px var(--primary)" }}
             />
-            <span className="font-serif-display text-sm tracking-[0.35em] uppercase text-foreground/70">一签</span>
+            <span className="font-serif-display text-sm uppercase text-foreground/70">签</span>
           </Link>
 
           {showTemple && (
             <Link
               to="/temple"
-              className="text-[10px] tracking-[0.4em] uppercase text-foreground/45 hover:text-foreground/80 transition-colors"
+              className="text-[12px] tracking-[0.4em] uppercase text-foreground/45 hover:text-foreground/80 transition-colors"
             >
               心庙
             </Link>

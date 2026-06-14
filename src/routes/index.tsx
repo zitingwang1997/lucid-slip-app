@@ -122,17 +122,18 @@ function QuestionPage() {
 
         {/* 上区 */}
         <div className="relative z-10 w-full text-center">
-          <p className="font-serif-display text-[9px] uppercase text-foreground/25" style={{ letterSpacing: "0.65em" }}>
+          <p className="font-serif-display text-[9px] uppercase text-foreground/25" style={{ letterSpacing: "0.65em", marginTop: "2vh" }}>
             A Modern Ritual
           </p>
           <h1
             className="font-serif-sc text-ivory/95"
             style={{
-              marginTop: 16,
+              marginTop: 20,
               fontWeight: 200,
               fontSize: "clamp(22px, 5.5vw, 28px)",
               lineHeight: 1.85,
               letterSpacing: "0.22em",
+              paddingLeft: "0.22em",
               textShadow: "0 0 40px oklch(0.75 0.04 80 / 0.12)",
             }}
           >
@@ -148,7 +149,7 @@ function QuestionPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="输入你的困惑..."
+              placeholder="输入你的困惑"
               className="ritual-question-input w-full border-0 bg-transparent text-center font-serif-sc text-[16px] focus:outline-none"
               style={{
                 fontSize: "16px",

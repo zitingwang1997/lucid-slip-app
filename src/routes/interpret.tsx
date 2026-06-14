@@ -297,7 +297,16 @@ function InterpretPage() {
 
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
-  const poemFontSize = longestColumnLength > 22 ? "2.2cqi" : longestColumnLength > 18 ? "2.4cqi" : "2.9cqi";
+  const poemFontSize =
+    longestColumnLength > 22
+      ? "1.6cqi"
+      : longestColumnLength > 20
+        ? "1.8cqi"
+        : longestColumnLength > 18
+          ? "2.1cqi"
+          : longestColumnLength > 14
+            ? "2.4cqi"
+            : "2.5cqi";
 
   return (
     <Shell intensity={0.4}>
@@ -359,8 +368,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     right: "7%",
-                    top: "20%",
-                    height: "72%",
+                    top: "16%",
+                    height: "76%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
@@ -383,8 +392,8 @@ function InterpretPage() {
                   className="pointer-events-none absolute flex flex-row-reverse"
                   style={{
                     left: "7%",
-                    top: "20%",
-                    height: "72%",
+                    top: "16%",
+                    height: "76%",
                     gap: "clamp(4px, 1.6cqi, 14px)",
                   }}
                 >
