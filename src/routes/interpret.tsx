@@ -299,14 +299,14 @@ function InterpretPage() {
 
   const poemFontSize =
     longestColumnLength > 26
-      ? "clamp(18px, 2.2vw, 22px)"
+      ? "2.0cqi"
       : longestColumnLength > 22
-        ? "clamp(20px, 2.4vw, 24px)"
+        ? "2.2cqi"
         : longestColumnLength > 18
-          ? "clamp(22px, 2.6vw, 26px)"
+          ? "2.4cqi"
           : longestColumnLength > 14
-            ? "clamp(24px, 2.8vw, 28px)"
-            : "clamp(25px, 3vw, 30px)";
+            ? "2.6cqi"
+            : "2.6cqi";
 
   return (
     <Shell intensity={0.4}>
