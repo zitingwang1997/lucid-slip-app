@@ -298,9 +298,9 @@ function InterpretPage() {
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
   const poemFontSize =
-    longestColumnLength > 22
+    longestColumnLength > 26
       ? "2.0cqi"
-      : longestColumnLength > 20
+      : longestColumnLength > 22
         ? "2.2cqi"
         : longestColumnLength > 18
           ? "2.4cqi"
