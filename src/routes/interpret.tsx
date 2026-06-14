@@ -306,7 +306,7 @@ function InterpretPage() {
           ? "2.4cqi"
           : longestColumnLength > 14
             ? "2.6cqi"
-            : "2.6cqi";
+            : "2.7cqi";
 
   return (
     <Shell intensity={0.4}>
