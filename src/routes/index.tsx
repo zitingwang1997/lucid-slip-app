@@ -61,6 +61,8 @@ function QuestionPage() {
 
     // Check today's previously-asked questions for semantic similarity.
     const today = getTodayHistory();
+    console.log("[same-day] new question", text);
+    console.log("[same-day] today history", today);
     if (today.length > 0) {
       setChecking(true);
       try {
@@ -75,21 +77,20 @@ function QuestionPage() {
             })),
           },
         });
+        console.log("[same-day] result", result);
         if (result.matchedId) {
-          // Same-day duplicate intent — do NOT draw a new slip.
+          // Same-day duplicate intent — do NOT draw a new slip, do NOT clear ritual session.
           navigate({
             to: "/today-guidance",
             search: { id: result.matchedId, q: text },
           });
+          setChecking(false);
           return;
         }
         // No match: continue, and stamp intent/category on the new entry
         // we are about to create in /draw by stashing it via a one-shot key.
         clearRitualSession();
         setUserQuestion(text);
-        // Save intent/category onto the most recent entry once /draw creates it.
-        // We do this lazily: store the latest classification on sessionStorage
-        // so /draw can copy it onto the new HistoryEntry it pushes.
         try {
           sessionStorage.setItem(
             "oneslip.pendingClassification.v1",
