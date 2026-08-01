@@ -25,17 +25,19 @@ export function RitualErrorScreen({
 }: RitualErrorScreenProps) {
   const motes = useMemo(
     () =>
-      Array.from({ length: 22 }, (_, i) => {
-        const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
-        const distance = 220 + Math.random() * 420;
+      Array.from({ length: 40 }, (_, i) => {
+        const angle = (i / 40) * Math.PI * 2 + Math.random() * 0.4;
+        const distance = 160 + Math.random() * 460;
+        // brighter/bigger when they stay close to the smoke column at center
+        const nearness = 1 - Math.min(distance, 620) / 620;
         return {
           id: i,
           tx: Math.cos(angle) * distance,
           ty: Math.sin(angle) * distance * 0.9,
-          delay: Math.random() * 10,
-          duration: 12 + Math.random() * 10,
-          size: 1 + Math.random() * 2,
-          opacity: 0.18 + Math.random() * 0.35,
+          delay: Math.random() * 9,
+          duration: 10 + Math.random() * 9,
+          size: 1 + nearness * 2.6 + Math.random(),
+          opacity: 0.2 + nearness * 0.65,
         };
       }),
     [],
@@ -71,30 +73,54 @@ export function RitualErrorScreen({
       <div className="slow-fade-in relative flex flex-col items-center">
         {/* incense */}
         <div className="relative h-[280px] w-[160px]">
+          {/* smoke haze glow */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-0 h-[200px] w-[150px] -translate-x-1/2 smoke-haze"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 85%, oklch(0.8 0.1 60 / 0.16), transparent 65%)",
+              filter: "blur(12px)",
+            }}
+          />
+
           {/* smoke */}
           <svg
-            className="pointer-events-none absolute left-1/2 top-0 h-[170px] w-[120px] -translate-x-1/2"
-            viewBox="0 0 120 170"
+            className="pointer-events-none absolute left-1/2 top-0 h-[176px] w-[130px] -translate-x-1/2"
+            viewBox="0 0 130 176"
             fill="none"
             aria-hidden="true"
           >
-            <g style={{ filter: "blur(3px)" }}>
-              <path
-                className="incense-smoke"
-                d="M60 168 C 54 140, 68 126, 60 104 C 52 82, 66 66, 58 42 C 54 28, 60 16, 62 4"
-                stroke="oklch(0.86 0.03 70 / 0.30)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-              <path
-                className="incense-smoke incense-smoke-alt"
-                d="M60 168 C 66 144, 52 128, 62 106 C 70 84, 56 68, 64 44 C 68 30, 60 18, 58 6"
-                stroke="oklch(0.86 0.03 70 / 0.18)"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
+            <g style={{ filter: "blur(2.2px)" }}>
+              <g className="smoke-sway">
+                <path
+                  className="incense-smoke"
+                  d="M65 174 C 58 148, 76 134, 63 112 C 50 90, 78 78, 66 54 C 58 38, 70 24, 60 6"
+                  stroke="oklch(0.9 0.03 70 / 0.42)"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                />
+              </g>
+              <g className="smoke-sway smoke-sway-alt">
+                <path
+                  className="incense-smoke incense-smoke-alt"
+                  d="M65 174 C 74 150, 52 136, 68 114 C 84 92, 56 76, 70 52 C 78 36, 62 22, 72 4"
+                  stroke="oklch(0.9 0.03 70 / 0.26)"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </g>
+              <g className="smoke-sway smoke-sway-slow">
+                <path
+                  className="incense-smoke incense-smoke-slow"
+                  d="M65 174 C 62 152, 88 138, 74 116 C 60 96, 88 82, 78 58 C 72 42, 84 26, 76 8"
+                  stroke="oklch(0.9 0.03 70 / 0.16)"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </g>
             </g>
           </svg>
+
 
           {/* ember tip */}
           <span
