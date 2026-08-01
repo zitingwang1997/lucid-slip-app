@@ -13,6 +13,7 @@ import { Route as TodayGuidanceRouteImport } from './routes/today-guidance'
 import { Route as TempleRouteImport } from './routes/temple'
 import { Route as PoemRouteImport } from './routes/poem'
 import { Route as InterpretRouteImport } from './routes/interpret'
+import { Route as ErrorPreviewRouteImport } from './routes/error-preview'
 import { Route as DrawRouteImport } from './routes/draw'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -36,6 +37,11 @@ const InterpretRoute = InterpretRouteImport.update({
   path: '/interpret',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErrorPreviewRoute = ErrorPreviewRouteImport.update({
+  id: '/error-preview',
+  path: '/error-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DrawRoute = DrawRouteImport.update({
   id: '/draw',
   path: '/draw',
@@ -50,6 +56,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/draw': typeof DrawRoute
+  '/error-preview': typeof ErrorPreviewRoute
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/draw': typeof DrawRoute
+  '/error-preview': typeof ErrorPreviewRoute
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/draw': typeof DrawRoute
+  '/error-preview': typeof ErrorPreviewRoute
   '/interpret': typeof InterpretRoute
   '/poem': typeof PoemRoute
   '/temple': typeof TempleRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/draw'
+    | '/error-preview'
     | '/interpret'
     | '/poem'
     | '/temple'
     | '/today-guidance'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/draw' | '/interpret' | '/poem' | '/temple' | '/today-guidance'
+  to:
+    | '/'
+    | '/draw'
+    | '/error-preview'
+    | '/interpret'
+    | '/poem'
+    | '/temple'
+    | '/today-guidance'
   id:
     | '__root__'
     | '/'
     | '/draw'
+    | '/error-preview'
     | '/interpret'
     | '/poem'
     | '/temple'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DrawRoute: typeof DrawRoute
+  ErrorPreviewRoute: typeof ErrorPreviewRoute
   InterpretRoute: typeof InterpretRoute
   PoemRoute: typeof PoemRoute
   TempleRoute: typeof TempleRoute
@@ -132,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterpretRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/error-preview': {
+      id: '/error-preview'
+      path: '/error-preview'
+      fullPath: '/error-preview'
+      preLoaderRoute: typeof ErrorPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/draw': {
       id: '/draw'
       path: '/draw'
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DrawRoute: DrawRoute,
+  ErrorPreviewRoute: ErrorPreviewRoute,
   InterpretRoute: InterpretRoute,
   PoemRoute: PoemRoute,
   TempleRoute: TempleRoute,
@@ -160,3 +187,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
