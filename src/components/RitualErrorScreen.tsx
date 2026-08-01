@@ -25,37 +25,48 @@ export function RitualErrorScreen({
 }: RitualErrorScreenProps) {
   const motes = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        id: i,
-        left: 8 + Math.random() * 84,
-        delay: Math.random() * 12,
-        duration: 16 + Math.random() * 14,
-        size: 1 + Math.random() * 2,
-        opacity: 0.18 + Math.random() * 0.35,
-      })),
+      Array.from({ length: 22 }, (_, i) => {
+        const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
+        const distance = 220 + Math.random() * 420;
+        return {
+          id: i,
+          tx: Math.cos(angle) * distance,
+          ty: Math.sin(angle) * distance * 0.9,
+          delay: Math.random() * 10,
+          duration: 12 + Math.random() * 10,
+          size: 1 + Math.random() * 2,
+          opacity: 0.18 + Math.random() * 0.35,
+        };
+      }),
     [],
   );
 
   return (
     <main className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-16">
-      {/* drifting golden motes */}
+      {/* golden motes radiating outward from the center */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {motes.map((m) => (
           <span
             key={m.id}
             className="absolute rounded-full"
-            style={{
-              left: `${m.left}%`,
-              bottom: "-8px",
-              width: `${m.size}px`,
-              height: `${m.size}px`,
-              background: `oklch(0.8 0.13 60 / ${m.opacity})`,
-              boxShadow: `0 0 ${m.size * 5}px oklch(0.76 0.13 55 / ${m.opacity * 0.7})`,
-              animation: `float-particle ${m.duration}s linear ${m.delay}s infinite`,
-            }}
+            style={
+              {
+                left: "50%",
+                top: "50%",
+                width: `${m.size}px`,
+                height: `${m.size}px`,
+                background: `oklch(0.8 0.13 60 / ${m.opacity})`,
+                boxShadow: `0 0 ${m.size * 5}px oklch(0.76 0.13 55 / ${m.opacity * 0.7})`,
+                "--mote-tx": `${m.tx}px`,
+                "--mote-ty": `${m.ty}px`,
+                "--mote-opacity": m.opacity,
+                animation: `radiate-particle ${m.duration}s ease-out ${m.delay}s infinite`,
+              } as React.CSSProperties
+            }
           />
         ))}
       </div>
+
 
       <div className="slow-fade-in relative flex flex-col items-center">
         {/* incense */}
