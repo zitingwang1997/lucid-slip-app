@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { RitualErrorScreen } from "@/components/RitualErrorScreen";
+
 import {
   getInterpretCacheV2,
   getSelectedSlip,
