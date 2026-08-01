@@ -228,6 +228,15 @@ function PoemPage() {
 
   if (!slip) return null;
 
+  if (interpretStatus === "error") {
+    return (
+      <Shell intensity={0.5}>
+        <RitualErrorScreen detail={error} onRetry={retryInterpret} onRestart={onRestart} retryLabel="重 新 解 签" />
+      </Shell>
+    );
+  }
+
+
   const normalizePoemColumn = (text: string) => {
     if (!text) return "";
     return /[，。！？；]$/.test(text) ? text : `${text}。`;
