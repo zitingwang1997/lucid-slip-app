@@ -25,17 +25,19 @@ export function RitualErrorScreen({
 }: RitualErrorScreenProps) {
   const motes = useMemo(
     () =>
-      Array.from({ length: 22 }, (_, i) => {
-        const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
-        const distance = 220 + Math.random() * 420;
+      Array.from({ length: 40 }, (_, i) => {
+        const angle = (i / 40) * Math.PI * 2 + Math.random() * 0.4;
+        const distance = 160 + Math.random() * 460;
+        // brighter/bigger when they stay close to the smoke column at center
+        const nearness = 1 - Math.min(distance, 620) / 620;
         return {
           id: i,
           tx: Math.cos(angle) * distance,
           ty: Math.sin(angle) * distance * 0.9,
-          delay: Math.random() * 10,
-          duration: 12 + Math.random() * 10,
-          size: 1 + Math.random() * 2,
-          opacity: 0.18 + Math.random() * 0.35,
+          delay: Math.random() * 9,
+          duration: 10 + Math.random() * 9,
+          size: 1 + nearness * 2.6 + Math.random(),
+          opacity: 0.2 + nearness * 0.65,
         };
       }),
     [],
