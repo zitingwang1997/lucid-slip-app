@@ -315,29 +315,67 @@
 /* Ritual error screen: incense smoke + ember */
 @keyframes incense-smoke-drift {
   0% {
-    stroke-dashoffset: 220;
+    stroke-dashoffset: 300;
     opacity: 0;
-    transform: translateX(0) scaleX(1);
   }
-  15% {
-    opacity: 0.9;
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.75;
   }
   100% {
-    stroke-dashoffset: -220;
+    stroke-dashoffset: -300;
     opacity: 0;
-    transform: translateX(4px) scaleX(1.06);
   }
+}
+
+@keyframes smoke-sway {
+  0%,
+  100% {
+    transform: translateX(-4px) scaleX(0.96) skewX(-2deg);
+  }
+  35% {
+    transform: translateX(3px) scaleX(1.05) skewX(3deg);
+  }
+  70% {
+    transform: translateX(-2px) scaleX(1.02) skewX(-1deg);
+  }
+}
+
+.smoke-sway {
+  transform-origin: 65px 174px;
+  animation: smoke-sway 7s ease-in-out infinite;
+}
+
+.smoke-sway-alt {
+  animation-duration: 9.5s;
+  animation-delay: -2s;
+}
+
+.smoke-sway-slow {
+  animation-duration: 13s;
+  animation-delay: -5s;
+}
+
+.smoke-haze {
+  animation: smoke-sway 11s ease-in-out infinite;
+  transform-origin: 50% 100%;
 }
 
 .incense-smoke {
-  stroke-dasharray: 60 320;
-  transform-origin: 60px 168px;
-  animation: incense-smoke-drift 9s ease-in-out infinite;
+  stroke-dasharray: 90 300;
+  animation: incense-smoke-drift 6.5s linear infinite;
 }
 
 .incense-smoke-alt {
+  animation-duration: 9s;
+  animation-delay: -3s;
+}
+
+.incense-smoke-slow {
   animation-duration: 12s;
-  animation-delay: 2.4s;
+  animation-delay: -6s;
 }
 
 @keyframes incense-ember-glow {
