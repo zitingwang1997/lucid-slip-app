@@ -271,6 +271,23 @@ function InterpretPage() {
 
   if (!slip) return null;
 
+  if (!result && interpretError && !interpretLoading) {
+    const q = getUserQuestion();
+    return (
+      <Shell intensity={0.5}>
+        <RitualErrorScreen
+          detail={interpretError}
+          retryLabel="重 新 解 签"
+          onRetry={() => {
+            if (q) void fallbackFetchInterpret(slip, q);
+          }}
+          onRestart={() => navigate({ to: "/" })}
+        />
+      </Shell>
+    );
+  }
+
+
   const xiang = result?.xiang_content ?? "";
   const yi = result?.yi_content ?? "";
   const xing = result?.xing_content ?? "";
