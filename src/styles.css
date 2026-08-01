@@ -169,6 +169,24 @@
   animation: breathe 6s ease-in-out infinite;
 }
 
+@keyframes radiate-particle {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--mote-opacity, 0.5);
+  }
+  75% {
+    opacity: calc(var(--mote-opacity, 0.5) * 0.5);
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(var(--mote-tx, 0px), var(--mote-ty, 0px)) scale(1);
+    opacity: 0;
+  }
+}
+
+
 @keyframes float-particle {
   0% {
     transform: translateY(0) translateX(0);
