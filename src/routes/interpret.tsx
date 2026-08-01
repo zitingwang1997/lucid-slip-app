@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { RitualErrorScreen } from "@/components/RitualErrorScreen";
+
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
 import {
@@ -270,6 +272,23 @@ function InterpretPage() {
   }
 
   if (!slip) return null;
+
+  if (!result && interpretError && !interpretLoading) {
+    const q = getUserQuestion();
+    return (
+      <Shell intensity={0.5}>
+        <RitualErrorScreen
+          detail={interpretError}
+          retryLabel="重 新 解 签"
+          onRetry={() => {
+            if (q) void fallbackFetchInterpret(slip, q);
+          }}
+          onRestart={() => navigate({ to: "/" })}
+        />
+      </Shell>
+    );
+  }
+
 
   const xiang = result?.xiang_content ?? "";
   const yi = result?.yi_content ?? "";

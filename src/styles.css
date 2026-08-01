@@ -293,3 +293,51 @@
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
 }
+
+/* Ritual error screen: incense smoke + ember */
+@keyframes incense-smoke-drift {
+  0% {
+    stroke-dashoffset: 220;
+    opacity: 0;
+    transform: translateX(0) scaleX(1);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: -220;
+    opacity: 0;
+    transform: translateX(4px) scaleX(1.06);
+  }
+}
+
+.incense-smoke {
+  stroke-dasharray: 60 320;
+  transform-origin: 60px 168px;
+  animation: incense-smoke-drift 9s ease-in-out infinite;
+}
+
+.incense-smoke-alt {
+  animation-duration: 12s;
+  animation-delay: 2.4s;
+}
+
+@keyframes incense-ember-glow {
+  0%,
+  100% {
+    background: oklch(0.72 0.18 45 / 0.85);
+    box-shadow:
+      0 0 8px oklch(0.75 0.18 48 / 0.8),
+      0 0 20px oklch(0.7 0.17 42 / 0.35);
+  }
+  50% {
+    background: oklch(0.82 0.2 55 / 1);
+    box-shadow:
+      0 0 14px oklch(0.82 0.2 52 / 0.95),
+      0 0 34px oklch(0.74 0.18 45 / 0.5);
+  }
+}
+
+.incense-ember {
+  animation: incense-ember-glow 3.4s ease-in-out infinite;
+}
