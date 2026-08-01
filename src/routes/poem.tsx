@@ -452,34 +452,17 @@ function PoemPage() {
 
         {revealed && (
           <div className="mt-8 flex w-full max-w-[340px] flex-col items-center gap-2 slow-fade-in">
-            {interpretStatus === "error" ? (
-              <>
-                {error && <p className="font-serif-sc text-[11px] tracking-[0.25em] text-destructive/70">{error}</p>}
-                <button
-                  onClick={retryInterpret}
-                  className="font-serif-sc text-[12px] tracking-[0.35em] text-foreground/45 transition-colors hover:text-foreground/70"
-                >
-                  重 新 解 签
-                </button>
-                <button
-                  onClick={onRestart}
-                  className="mt-1 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/30 transition-colors hover:text-foreground/55"
-                >
-                  重 启 仪 式
-                </button>
-              </>
-            ) : (
-              <div
-                className="flex flex-col items-center font-serif-sc text-[12px] leading-[1.9] tracking-[0.5em] text-foreground/40"
-                style={{
-                  opacity: awaitingInterpret ? 0.7 : 1,
-                  transition: "opacity 600ms ease",
-                }}
-              >
-                <span>长 按 签 文</span>
-                <span>静 观 其 意</span>
-              </div>
-            )}
+            <div
+              className="flex flex-col items-center font-serif-sc text-[12px] leading-[1.9] tracking-[0.5em] text-foreground/40"
+              style={{
+                opacity: awaitingInterpret ? 0.7 : 1,
+                transition: "opacity 600ms ease",
+              }}
+            >
+              <span>长 按 签 文</span>
+              <span>静 观 其 意</span>
+            </div>
+
           </div>
         )}
       </main>
