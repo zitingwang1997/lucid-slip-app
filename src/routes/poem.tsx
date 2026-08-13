@@ -223,17 +223,12 @@ function PoemPage() {
     navigate({ to: "/" });
   };
 
-  const retryInterpret = () => {
-    const q = getUserQuestion();
-    if (slip && q) void runInterpret(slip, q);
-  };
-
   if (!slip) return null;
 
   if (interpretStatus === "error") {
     return (
       <Shell intensity={0.5}>
-        <RitualErrorScreen detail={error} onRetry={retryInterpret} onRestart={onRestart} retryLabel="重 新 解 签" />
+        <RitualErrorScreen detail={error} onRestart={onRestart} />
       </Shell>
     );
   }

@@ -21,6 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 function QuestionPage() {
+
   const navigate = useNavigate();
   const checkSameDay = useServerFn(checkSameDayQuestion);
   const [q, setQ] = useState("");

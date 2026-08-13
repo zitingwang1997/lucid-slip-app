@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Shell } from "@/components/Shell";
 import { RitualErrorScreen } from "@/components/RitualErrorScreen";
 
@@ -18,14 +18,11 @@ export const Route = createFileRoute("/error-preview")({
 });
 
 function ErrorPreviewPage() {
+  const navigate = useNavigate();
+
   return (
     <Shell intensity={0.5}>
-      <RitualErrorScreen
-        detail="解签失败，请稍后再试（预览示例）"
-        onRetry={() => {}}
-        onRestart={() => {}}
-        retryLabel="重 新 解 签"
-      />
+      <RitualErrorScreen detail="解签失败，请稍后再试" onRestart={() => navigate({ to: "/" })} />
     </Shell>
   );
 }

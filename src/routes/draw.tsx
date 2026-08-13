@@ -10,6 +10,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
+import { randomId } from "@/lib/utils";
 
 export const Route = createFileRoute("/draw")({
   head: () => ({ meta: [{ title: "求签 · 一签" }] }),
@@ -52,7 +53,7 @@ function DrawPage() {
       }
       const slip = maybeSlip as SelectedSlip;
       setSelectedSlip(slip);
-      const historyId = crypto.randomUUID();
+      const historyId = randomId();
       let intent: string | undefined;
       let category: string | undefined;
       try {

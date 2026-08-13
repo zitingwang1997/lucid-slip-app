@@ -312,24 +312,9 @@
   50% { opacity: 1; }
 }
 
-/* Ritual error screen: incense smoke + ember */
-@keyframes incense-smoke-drift {
-  0% {
-    stroke-dashoffset: 300;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.75;
-  }
-  100% {
-    stroke-dashoffset: -300;
-    opacity: 0;
-  }
-}
-
+/* Ritual error screen: incense smoke + ember
+ * 烟本体已改为 canvas 流场粒子（见 components/IncenseSmoke.tsx），
+ * 这里只剩香座光晕（.smoke-haze）和余烬明灭（.incense-ember）。 */
 @keyframes smoke-sway {
   0%,
   100% {
@@ -343,39 +328,9 @@
   }
 }
 
-.smoke-sway {
-  transform-origin: 65px 174px;
-  animation: smoke-sway 7s ease-in-out infinite;
-}
-
-.smoke-sway-alt {
-  animation-duration: 9.5s;
-  animation-delay: -2s;
-}
-
-.smoke-sway-slow {
-  animation-duration: 13s;
-  animation-delay: -5s;
-}
-
 .smoke-haze {
   animation: smoke-sway 11s ease-in-out infinite;
   transform-origin: 50% 100%;
-}
-
-.incense-smoke {
-  stroke-dasharray: 90 300;
-  animation: incense-smoke-drift 6.5s linear infinite;
-}
-
-.incense-smoke-alt {
-  animation-duration: 9s;
-  animation-delay: -3s;
-}
-
-.incense-smoke-slow {
-  animation-duration: 12s;
-  animation-delay: -6s;
 }
 
 @keyframes incense-ember-glow {
@@ -396,4 +351,16 @@
 
 .incense-ember {
   animation: incense-ember-glow 3.4s ease-in-out infinite;
+}
+
+/* 尊重系统的「减弱动态效果」设置。全站常驻的无限循环动画很多，
+ * 对前庭功能敏感的用户必须给降级。canvas 粒子在组件里另行判断。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

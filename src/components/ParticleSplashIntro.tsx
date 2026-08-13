@@ -1,47 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-
-// --- Perlin-like noise --------------------------------------------------------
-function fade(t: number) {
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-function lerp(a: number, b: number, t: number) {
-  return a + t * (b - a);
-}
-function grad(hash: number, x: number, y: number) {
-  const h = hash & 3;
-  const u = h < 2 ? x : y;
-  const v = h < 2 ? y : x;
-  return (h & 1 ? -u : u) + (h & 2 ? -v : v);
-}
-const _P = [
-  151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21,
-  10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149,
-  56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229,
-  122, 60, 211, 133, 230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161, 1, 216, 80, 73, 209,
-  76, 132, 187, 208, 89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64, 52, 217,
-  226, 250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16, 58, 17, 182, 189, 28, 42,
-  223, 183, 170, 213, 119, 248, 152, 2, 44, 154, 163, 70, 221, 153, 101, 155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98,
-  108, 110, 79, 113, 224, 232, 178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179,
-  162, 241, 81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50,
-  45, 127, 4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180,
-];
-const PERM = Array.from({ length: 512 }, (_, i) => _P[i & 255]);
-function noise2(x: number, y: number) {
-  const X = Math.floor(x) & 255,
-    Y = Math.floor(y) & 255;
-  const xf = x - Math.floor(x),
-    yf = y - Math.floor(y);
-  const u = fade(xf),
-    v = fade(yf);
-  const a = PERM[X] + Y,
-    b = PERM[X + 1] + Y;
-  return lerp(
-    lerp(grad(PERM[a], xf, yf), grad(PERM[b], xf - 1, yf), u),
-    lerp(grad(PERM[a + 1], xf, yf - 1), grad(PERM[b + 1], xf - 1, yf - 1), u),
-    v,
-  );
-}
-// -----------------------------------------------------------------------------
+import { noise2, drawParticle } from "@/lib/particles";
+import { GlyphYi, GlyphQian } from "./LogoGlyphs";
 
 interface Particle {
   sx: number;
@@ -66,21 +25,19 @@ interface Particle {
 }
 
 // -- Timing (seconds) ---------------------------------------------------------
-const T_CHARS_SHOW = 2.6;
-const T_HOLD_START = 3.0;
-const T_HOLD_END = 5.4;
-const T_DONE = 7.2;
+const T_CHARS_SHOW = 2.6; //粒子飞了多久后 logo 开始浮现
+const T_HOLD_START = 3.0; //光球轻微脉动的区间
+const T_HOLD_END = 5.4; //光球轻微脉动的区间
+const T_DONE = 7.2; //整个开场结束、页面接管
 
 // -- Layout constants ----------------------------------------------------------
-const ORB_R = 36;
-const TEXT_GAP = 36;
-const CHAR_H = 36;
+const ORB_R = 36; //光球半径。注意它同时决定间距基准，改大字会跟着往外推
+const TEXT_GAP = 30; //字与光球的间距
+const LOGO_W = 48;   // ← 新增，logo 显示宽度，先用 72 试
 
 // -- Palette -------------------------------------------------------------------
-const ORB_WARM = "220, 195, 150";
-const ORB_EDGE = "160, 125,  70";
-const PART_HEAD = "210, 165, 85";
-const PART_TAIL = "160, 120, 55";
+const ORB_WARM = "220, 195, 150"; // 光球中心
+const ORB_EDGE = "160, 125,  70"; // 光球边缘
 
 export function ParticleSplashIntro() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -120,7 +77,7 @@ export function ParticleSplashIntro() {
     const CX = () => W / 2;
     const CY = () => H / 2;
 
-    const COUNT = 120;
+    const COUNT = 120; // 粒子数量
     const particles: Particle[] = [];
     for (let i = 0; i < COUNT; i++) {
       const edge = i % 4;
@@ -312,53 +269,87 @@ export function ParticleSplashIntro() {
     >
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0 }} />
 
-      {charsVisible && (
-        <span
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: `translateX(-50%) translateY(calc(-${ORB_R + TEXT_GAP}px - 100%))`,
-            fontFamily: "var(--font-serif-sc)",
-            fontSize: `${CHAR_H}px`,
-            fontWeight: 300,
-            color: "rgba(235, 225, 205, 0.90)",
-            letterSpacing: "0.18em",
-            textShadow: "0 0 24px rgba(210, 190, 150, 0.4)",
-            opacity: 0,
-            filter: "blur(12px)",
-            animation: "splashCharIn 2.0s ease-out forwards",
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          一
-        </span>
-      )}
+     
 
-      {charsVisible && (
-        <span
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: `translateX(-50%) translateY(${ORB_R + TEXT_GAP}px)`,
-            fontFamily: "var(--font-serif-sc)",
-            fontSize: `${CHAR_H}px`,
-            fontWeight: 300,
-            color: "rgba(235, 225, 205, 0.90)",
-            letterSpacing: "0.18em",
-            textShadow: "0 0 24px rgba(210, 190, 150, 0.4)",
-            opacity: 0,
-            filter: "blur(12px)",
-            animation: "splashCharIn 2.2s ease-out 0.5s forwards",
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          签
-        </span>
-      )}
+{charsVisible && (
+  <div
+    style={{
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      transform: `translateX(-50%) translateY(calc(-${ORB_R + TEXT_GAP}px - 100%))`,
+      color: "rgba(235, 225, 205, 0.80)", //logo“一”字体颜色
+      opacity: 0,
+      filter: "blur(12px)", //起始模糊度，调大会更有「从虚无中凝聚」的感觉
+      animation: "splashCharIn 2.0s ease-out forwards",
+      pointerEvents: "none",
+    }}
+  >
+    <GlyphYi
+      style={{
+        display: "block",
+        width: LOGO_W,
+        height: "auto",
+        filter: "drop-shadow(0 0 24px rgba(210, 190, 150, 0.45))", //字体发光效果， px控制光晕扩散半径，0.45是强度
+      }}
+    />
+  </div>
+)}
+
+{charsVisible && (
+  <div
+    style={{
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      transform: `translateX(-50%) translateY(${ORB_R + TEXT_GAP}px)`,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      color: "rgba(235, 225, 205, 0.90)",
+      pointerEvents: "none",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {/* 签 */}
+    <div style={{ opacity: 0, filter: "blur(12px)", animation: "splashCharIn 2.2s ease-out 0.5s forwards" }}>
+      <GlyphQian
+        style={{
+          display: "block",
+          width: LOGO_W,
+          height: "auto",
+          filter: "drop-shadow(0 0 18px rgba(210, 190, 150, 0.45))",
+        }}
+      />
+    </div>
+
+    {/* 圆点 + OneSlip */}
+    <div
+      style={{
+        opacity: 0,
+        filter: "blur(8px)",
+        animation: "splashCharIn 1.8s ease-out 0.55s forwards",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textShadow: "0 0 16px rgba(210, 190, 150, 0.35)",
+      }}
+    >
+      <span style={{ marginTop: 18, width: 3, height: 3, borderRadius: "50%", background: "currentColor", opacity: 0.55 }} />
+      <span
+        style={{
+          marginTop: 12, //圆点与OneSlip的间距
+          fontFamily: "var(--font-sans)",
+          fontSize: 18,
+          fontWeight: 300,
+          letterSpacing: "0.02em",
+        }}
+      >
+        OneSlip
+      </span>
+    </div>
+  </div>
+)}
 
       <style>{`
         @keyframes splashCharIn {
@@ -367,33 +358,4 @@ export function ParticleSplashIntro() {
       `}</style>
     </div>
   );
-}
-
-// -- Particle draw -------------------------------------------------------------
-function drawParticle(
-  ctx: CanvasRenderingContext2D,
-  p: { x: number; y: number; size: number; alpha: number; trail: { x: number; y: number }[] },
-  alphaScale: number,
-) {
-  const tLen = p.trail.length;
-  if (tLen < 2) return;
-  for (let i = 1; i < tLen; i++) {
-    const tp = p.trail[i];
-    const ratio = i / tLen;
-    const a = ratio * ratio * 0.2 * p.alpha * alphaScale;
-    const sz = p.size * ratio * 0.55;
-    ctx.fillStyle = `rgba(${PART_TAIL}, ${a})`;
-    ctx.beginPath();
-    ctx.arc(tp.x, tp.y, sz, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  const glowR = p.size * 3.0;
-  const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-  g.addColorStop(0, `rgba(${PART_HEAD}, ${0.9 * p.alpha * alphaScale})`);
-  g.addColorStop(0.3, `rgba(${PART_HEAD}, ${0.5 * p.alpha * alphaScale})`);
-  g.addColorStop(1, `rgba(${PART_TAIL}, 0)`);
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
-  ctx.fill();
 }
