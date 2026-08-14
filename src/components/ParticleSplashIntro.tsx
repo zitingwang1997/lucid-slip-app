@@ -34,6 +34,8 @@ const T_DONE = 7.2; //整个开场结束、页面接管
 const ORB_R = 36; //光球半径。注意它同时决定间距基准，改大字会跟着往外推
 const TEXT_GAP = 30; //字与光球的间距
 const LOGO_W = 48;   // ← 新增，logo 显示宽度，先用 72 试
+/** 整组上移量（像素）。加了 OneSlip 后下半部分变长，往上提回视觉中心 */
+const VERTICAL_SHIFT = 28;
 
 // -- Palette -------------------------------------------------------------------
 const ORB_WARM = "220, 195, 150"; // 光球中心
@@ -75,7 +77,7 @@ export function ParticleSplashIntro() {
     window.addEventListener("resize", resize);
 
     const CX = () => W / 2;
-    const CY = () => H / 2;
+    const CY = () => H / 2 - VERTICAL_SHIFT;
 
     const COUNT = 120; // 粒子数量
     const particles: Particle[] = [];
@@ -276,7 +278,7 @@ export function ParticleSplashIntro() {
     style={{
       position: "absolute",
       left: "50%",
-      top: "50%",
+      top: `calc(50% - ${VERTICAL_SHIFT}px)`,
       transform: `translateX(-50%) translateY(calc(-${ORB_R + TEXT_GAP}px - 100%))`,
       color: "rgba(235, 225, 205, 0.80)", //logo“一”字体颜色
       opacity: 0,
@@ -301,7 +303,7 @@ export function ParticleSplashIntro() {
     style={{
       position: "absolute",
       left: "50%",
-      top: "50%",
+      top: `calc(50% - ${VERTICAL_SHIFT}px)`,
       transform: `translateX(-50%) translateY(${ORB_R + TEXT_GAP}px)`,
       display: "flex",
       flexDirection: "column",
