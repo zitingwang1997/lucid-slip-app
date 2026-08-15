@@ -276,7 +276,13 @@ function InterpretPage() {
   if (!result && interpretError && !interpretLoading) {
     return (
       <Shell intensity={0.5}>
-        <RitualErrorScreen detail={interpretError} onRestart={() => navigate({ to: "/" })} />
+        {/* 已经离开签面页了，跳回去。签面数据在 session store 里，还在 */}
+        <RitualErrorScreen
+          detail={interpretError}
+          restartLabel="重 新 解 签"
+          onRestart={() => navigate({ to: "/poem" })}
+          onSecondary={() => navigate({ to: "/" })}
+        />
       </Shell>
     );
   }

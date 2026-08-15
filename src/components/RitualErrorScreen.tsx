@@ -26,9 +26,12 @@ interface RitualErrorScreenProps {
   title?: string;
   subtitle?: string;
   detail?: string | null;
-  /** 唯一的行动入口：回首页重新开始。不传就不渲染按钮 */
+  /** 主行动入口，渲染成首页同款胶囊按钮。不传就不渲染 */
   onRestart?: () => void;
   restartLabel?: string;
+  /** 次要入口，渲染成按钮下方一行很淡的文字。不传就不渲染 */
+  onSecondary?: () => void;
+  secondaryLabel?: string;
 }
 
 /**
@@ -41,6 +44,8 @@ export function RitualErrorScreen({
   detail,
   onRestart,
   restartLabel = "重启仪式",
+  onSecondary,
+  secondaryLabel = "重 启 仪 式",
 }: RitualErrorScreenProps) {
   const motes = useMemo(
     () =>
@@ -176,20 +181,31 @@ export function RitualErrorScreen({
           )}
         </div>
 
-        {onRestart && (
-          <div className="mt-10 flex justify-center">
-            {/* 与首页「求一支签」同款按钮，保持全站行动入口的一致性 */}
-            <button
-              onClick={onRestart}
-              className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory"
-              style={{
-                letterSpacing: "0.48em",
-                paddingRight: "calc(3rem - 0.48em)",
-                boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
-              }}
-            >
-              {restartLabel}
-            </button>
+        {(onRestart || onSecondary) && (
+          <div className="mt-10 flex flex-col items-center">
+            {/* 主入口：与首页「求一支签」同款按钮，保持全站行动入口的一致性 */}
+            {onRestart && (
+              <button
+                onClick={onRestart}
+                className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory"
+                style={{
+                  letterSpacing: "0.48em",
+                  paddingRight: "calc(3rem - 0.48em)",
+                  boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
+                }}
+              >
+                {restartLabel}
+              </button>
+            )}
+            {/* 次要入口：刻意做得很淡，不跟主按钮抢注意力 */}
+            {onSecondary && (
+              <button
+                onClick={onSecondary}
+                className="mt-6 font-serif-sc text-[11px] tracking-[0.3em] text-foreground/25 transition-colors hover:text-foreground/50"
+              >
+                {secondaryLabel}
+              </button>
+            )}
           </div>
         )}
       </div>

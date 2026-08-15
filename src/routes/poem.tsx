@@ -219,8 +219,19 @@ function PoemPage() {
     holdRaf.current = requestAnimationFrame(decayTick);
   };
 
-  const onRestart = () => {
-    navigate({ to: "/" });
+  /**
+   * 报错后回到签面。用户已经抽到签了，不该把他丢回首页重来。
+   * 状态清回 idle 让签诗重新露出来，同时后台重新发起解签请求 ——
+   * 否则用户再按住 PRESS & HOLD 时没有请求在跑，会一直等不到结果。
+   */
+  const backToPoem = () => {
+    setError(null);
+    setAwaitingInterpret(false);
+    setHoldProgress(0);
+    holdCompleted.current = false;
+    setInterpretStatus("idle");
+    const q = getUserQuestion();
+    if (slip && q) void runInterpret(slip, q);
   };
 
   if (!slip) return null;
@@ -228,7 +239,12 @@ function PoemPage() {
   if (interpretStatus === "error") {
     return (
       <Shell intensity={0.5}>
-        <RitualErrorScreen detail={error} onRestart={onRestart} />
+        <RitualErrorScreen
+          detail={error}
+          restartLabel="重 新 解 签"
+          onRestart={backToPoem}
+          onSecondary={() => navigate({ to: "/" })}
+        />
       </Shell>
     );
   }
