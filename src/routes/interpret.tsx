@@ -280,7 +280,7 @@ function InterpretPage() {
       <Shell intensity={0.5}>
         {/* 已经离开签面页了，跳回去。签面数据在 session store 里，还在 */}
         <RitualErrorScreen
-          detail={interpretError}
+          detail="解签暂时未完成，请稍后重试"
           restartLabel="重 新 解 签"
           onRestart={() => navigate({ to: "/poem" })}
           onSecondary={() => navigate({ to: "/" })}

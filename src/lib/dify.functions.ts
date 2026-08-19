@@ -9,6 +9,13 @@ function tryParseJSON(v: unknown): any {
   }
 }
 
+function workflowUserMessage(label: string) {
+  if (label === "draw") return "求签暂时未完成，请稍后重试";
+  if (label === "interpret") return "解签暂时未完成，请稍后重试";
+  if (label === "remedy") return "锦囊暂时未生成，请稍后重试";
+  return "服务暂时不可用，请稍后重试";
+}
+
 async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>, label: string) {
   const baseUrl = (process.env.DIFY_BASE_URL ?? "https://api.dify.ai/v1").replace(/\/$/, "");
   console.log(`[Dify ${label}] request inputs:`, JSON.stringify(inputs).slice(0, 500));
@@ -27,13 +34,14 @@ async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>,
   const text = await res.text();
   if (!res.ok) {
     console.error(`[Dify ${label}] error`, res.status, text);
-    throw new Error(`Dify request failed (${res.status}): ${text.slice(0, 300)}`);
+    throw new Error(workflowUserMessage(label));
   }
   let json: any;
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error("Dify returned non-JSON response");
+    console.error(`[Dify ${label}] non-JSON response:`, text.slice(0, 2000));
+    throw new Error(workflowUserMessage(label));
   }
   console.log(`[Dify ${label}] raw response:`, text.slice(0, 2000));
 
@@ -43,7 +51,7 @@ async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>,
   if (status && status !== "succeeded") {
     const msg = typeof wfError === "string" ? wfError : JSON.stringify(wfError ?? {});
     console.error(`[Dify ${label}] workflow status=${status} error:`, msg);
-    throw new Error(`Dify workflow ${label} ${status}: ${msg.slice(0, 400)}`);
+    throw new Error(workflowUserMessage(label));
   }
 
   let outputs: any = json?.data?.outputs ?? json?.outputs ?? json?.result ?? json?.output ?? {};

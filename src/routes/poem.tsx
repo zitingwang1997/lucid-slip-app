@@ -242,7 +242,7 @@ function PoemPage() {
     return (
       <Shell intensity={0.5}>
         <RitualErrorScreen
-          detail={error}
+          detail="解签暂时未完成，请稍后重试"
           restartLabel="重 新 解 签"
           onRestart={backToPoem}
           onSecondary={() => navigate({ to: "/" })}
