@@ -4,6 +4,7 @@ export interface SelectedSlip {
   id?: number;
   number?: string;
   realm?: string;
+  sign_level?: string;
   title?: string;
   poem?: string;
   keywords?: string;

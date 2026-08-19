@@ -122,6 +122,8 @@ function InterpretPage() {
             qian_data: JSON.stringify({
               id: s.id,
               number: s.number,
+              realm: s.realm,
+              sign_level: s.sign_level,
               title: s.title,
               poem: s.poem,
               allusion: s.allusion,

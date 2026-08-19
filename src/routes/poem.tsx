@@ -24,6 +24,8 @@ function buildQianData(slip: SelectedSlip) {
   return {
     id: slip.id,
     number: slip.number,
+    realm: slip.realm,
+    sign_level: (slip as any).sign_level,
     title: slip.title,
     poem: slip.poem,
     allusion: slip.allusion,
