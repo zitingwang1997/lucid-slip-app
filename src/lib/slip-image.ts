@@ -68,6 +68,19 @@ export function preloadSlipImages() {
   }
 }
 
+/** Download only the selected sign face once the draw result is known. */
+export function preloadSlipImage(slip: SelectedSlip) {
+  if (typeof window === "undefined") return;
+
+  const { primary } = getSlipImageSources(slip);
+  if (!primary || preloadCache.has(primary)) return;
+
+  const image = new Image();
+  image.decoding = "async";
+  image.src = primary;
+  preloadCache.set(primary, image);
+}
+
 function getQianNumber(slip: SelectedSlip): number | null {
   const imageMatch = slip.image_url?.match(/qian_(\d+)\.(?:png|webp)(?:$|[?#])/i);
   if (imageMatch) return Number(imageMatch[1]);

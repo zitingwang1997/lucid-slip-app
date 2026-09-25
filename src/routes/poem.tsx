@@ -46,11 +46,13 @@ function PoemPage() {
   const [awaitingInterpret, setAwaitingInterpret] = useState(false);
   const inflight = useRef(false);
   const holdRaf = useRef<number | null>(null);
-  const revealTimer = useRef<number | null>(null);
   const holdStart = useRef<number>(0);
   const holdProgress = useRef(0);
   const holdCompleted = useRef(false);
   const holdVisual = useRef<HTMLDivElement | null>(null);
+  const holdWash = useRef<HTMLDivElement | null>(null);
+  const holdSweep = useRef<HTMLDivElement | null>(null);
+  const holdCore = useRef<HTMLDivElement | null>(null);
   const HOLD_MS = 1800;
 
   const runInterpret = useCallback(
@@ -145,7 +147,6 @@ function PoemPage() {
 
     setSlip(s);
     setRevealed(false);
-    revealTimer.current = window.setTimeout(() => setRevealed(true), 450);
 
     const cached = getInterpretCacheV2();
     console.log("[POEM] interpret cache:", cached);
@@ -167,7 +168,6 @@ function PoemPage() {
     }
 
     return () => {
-      if (revealTimer.current != null) window.clearTimeout(revealTimer.current);
       if (holdRaf.current != null) cancelAnimationFrame(holdRaf.current);
     };
   }, [navigate, runInterpret]);
@@ -191,10 +191,16 @@ function PoemPage() {
     holdProgress.current = normalized;
 
     if (!holdVisual.current) return;
-    holdVisual.current.style.setProperty("--hold-x", `${-135 + normalized * 270}%`);
-    holdVisual.current.style.setProperty("--hold-scale", String(0.65 + normalized * 0.85));
-    holdVisual.current.style.setProperty("--hold-strength", String(normalized));
     holdVisual.current.style.opacity = normalized > 0 ? "1" : "0";
+    if (holdWash.current) holdWash.current.style.opacity = String(normalized);
+    if (holdSweep.current) {
+      const sweepX = -100 + normalized * 200;
+      holdSweep.current.style.transform = `translate3d(${sweepX}%, 0, 0) rotate(8deg)`;
+    }
+    if (holdCore.current) {
+      holdCore.current.style.opacity = String(normalized);
+      holdCore.current.style.transform = `translate3d(-50%, -50%, 0) scale(${0.65 + normalized * 0.85})`;
+    }
   };
 
   const beginHold = () => {
@@ -362,6 +368,12 @@ function PoemPage() {
               errorClassName="absolute bottom-[4%] left-1/2 z-20 -translate-x-1/2 rounded-full border border-[rgba(55,38,24,0.2)] bg-[rgba(245,239,227,0.85)] px-4 py-2 font-serif-sc text-[10px] tracking-[0.18em] text-[rgba(55,38,24,0.62)]"
             />
 
+            {!revealed && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif-sc text-xs tracking-[0.35em] text-[rgba(55,38,24,0.38)]">
+                签 面 显 现 中
+              </div>
+            )}
+
             {/* Top-left: Chinese number */}
             {revealed && (
               <div
@@ -438,11 +450,17 @@ function PoemPage() {
             {/* Golden hold feedback */}
             <div
               ref={holdVisual}
-              className="poem-hold-glow pointer-events-none absolute inset-0 overflow-hidden"
+              className={`poem-hold-glow pointer-events-none absolute inset-0 overflow-hidden ${awaitingInterpret ? "poem-hold-glow--waiting" : ""}`}
             >
-              <div className="poem-hold-glow__wash absolute inset-0" />
-              <div className="poem-hold-glow__sweep absolute inset-y-[-15%] left-[-22%] w-[44%]" />
-              <div className="poem-hold-glow__core absolute left-1/2 top-1/2 h-24 w-24 rounded-full" />
+              <div ref={holdWash} className="poem-hold-glow__wash absolute inset-0" />
+              <div
+                ref={holdSweep}
+                className="poem-hold-glow__sweep absolute inset-y-[-15%] left-0 w-full"
+              />
+              <div
+                ref={holdCore}
+                className="poem-hold-glow__core absolute left-1/2 top-1/2 h-24 w-24 rounded-full"
+              />
             </div>
           </div>
         </div>
@@ -456,8 +474,8 @@ function PoemPage() {
                 transition: "opacity 600ms ease",
               }}
             >
-              <span>长 按 签 文</span>
-              <span>静 观 其 意</span>
+              <span>{awaitingInterpret ? "签 意 解析 中" : "长 按 签 文"}</span>
+              <span>{awaitingInterpret ? "静 候 片 刻" : "静 观 其 意"}</span>
             </div>
           </div>
         )}

@@ -19,18 +19,33 @@ function workflowUserMessage(label: string) {
 async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>, label: string) {
   const baseUrl = (process.env.DIFY_BASE_URL ?? "https://api.dify.ai/v1").replace(/\/$/, "");
   console.log(`[Dify ${label}] request inputs:`, JSON.stringify(inputs).slice(0, 500));
-  const res = await fetch(`${baseUrl}/workflows/run`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      inputs,
-      response_mode: "blocking",
-      user: "oneslip-web",
-    }),
-  });
+  const controller = new AbortController();
+  // Lovable's edge request can be cut off before a slow upstream responds,
+  // which Safari surfaces only as "Load failed". End the draw request first
+  // so the client receives a recoverable application error instead.
+  const timeoutMs = label === "draw" ? 20_000 : 50_000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}/workflows/run`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs,
+        response_mode: "blocking",
+        user: "oneslip-web",
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    console.error(`[Dify ${label}] network error:`, error);
+    throw new Error(workflowUserMessage(label));
+  } finally {
+    clearTimeout(timeout);
+  }
   const text = await res.text();
   if (!res.ok) {
     console.error(`[Dify ${label}] error`, res.status, text);

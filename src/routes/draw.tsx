@@ -10,7 +10,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
-import { preloadSlipImages } from "@/lib/slip-image";
+import { preloadSlipImage } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
 
 export const Route = createFileRoute("/draw")({
@@ -19,6 +19,14 @@ export const Route = createFileRoute("/draw")({
 });
 
 const HOLD_MS = 3200;
+const DRAW_WARMUP_MS = 400;
+
+type DrawRequestResult = { ok: true; value: unknown } | { ok: false; error: unknown };
+
+function isTransportError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /load failed|failed to fetch|network|connection/i.test(message);
+}
 
 function DrawPage() {
   const navigate = useNavigate();
@@ -30,6 +38,43 @@ function DrawPage() {
   const raf = useRef<number | null>(null);
   const startTs = useRef<number>(0);
   const baseProgress = useRef(0);
+  const warmupTimer = useRef<number | null>(null);
+  const drawRequest = useRef<Promise<DrawRequestResult> | null>(null);
+
+  const prepareDraw = () => {
+    if (drawRequest.current) return drawRequest.current;
+
+    const question = getUserQuestion().trim();
+    if (!question) return null;
+
+    const run = () => drawSlipFn({ data: { user_question: question } });
+    drawRequest.current = run()
+      .catch(async (requestError) => {
+        if (!isTransportError(requestError)) throw requestError;
+        console.warn("[draw] transport failed; retrying once");
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 600));
+        return run();
+      })
+      .then((value) => {
+        const maybeSlip = ((value as { slip?: unknown } | null)?.slip ?? value) as
+          | SelectedSlip
+          | undefined;
+        if (maybeSlip && typeof maybeSlip === "object" && !Array.isArray(maybeSlip)) {
+          preloadSlipImage(maybeSlip);
+        }
+        return { ok: true as const, value };
+      })
+      .catch((requestError) => ({ ok: false as const, error: requestError }));
+    return drawRequest.current;
+  };
+
+  const endHold = () => {
+    if (warmupTimer.current != null) {
+      window.clearTimeout(warmupTimer.current);
+      warmupTimer.current = null;
+    }
+    setHolding(false);
+  };
 
   const complete = async () => {
     if (completed.current) return;
@@ -40,7 +85,14 @@ function DrawPage() {
         navigate({ to: "/" });
         return;
       }
-      const res = await drawSlipFn({ data: { user_question: question.trim() } });
+      const pendingDraw = prepareDraw();
+      if (!pendingDraw) {
+        navigate({ to: "/" });
+        return;
+      }
+      const drawResult = await pendingDraw;
+      if (!drawResult.ok) throw drawResult.error;
+      const res = drawResult.value;
       const maybeSlip = ((res as any)?.slip ?? res) as SelectedSlip | undefined;
       const isValid =
         maybeSlip &&
@@ -53,6 +105,7 @@ function DrawPage() {
         throw new Error("求签返回数据不完整，请稍后再试");
       }
       const slip = maybeSlip as SelectedSlip;
+      preloadSlipImage(slip);
       setSelectedSlip(slip);
       const historyId = randomId();
       let intent: string | undefined;
@@ -80,10 +133,23 @@ function DrawPage() {
       setCurrentHistoryId(historyId);
       navigate({ to: "/poem" });
     } catch (e: any) {
+      console.error("[draw] request failed:", e);
+      drawRequest.current = null;
       completed.current = false;
-      setError(e?.message ?? "求签失败，请稍后再试");
+      setHolding(false);
+      setProgress(0);
+      baseProgress.current = 0;
+      startTs.current = 0;
+      setError("求签暂时未完成，请再次长按");
     }
   };
+
+  useEffect(
+    () => () => {
+      if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const tick = (ts: number) => {
@@ -164,12 +230,16 @@ function DrawPage() {
         <button
           onPointerDown={() => {
             setError(null);
-            preloadSlipImages();
+            if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
+            warmupTimer.current = window.setTimeout(() => {
+              warmupTimer.current = null;
+              void prepareDraw();
+            }, DRAW_WARMUP_MS);
             setHolding(true);
           }}
-          onPointerUp={() => setHolding(false)}
-          onPointerLeave={() => setHolding(false)}
-          onPointerCancel={() => setHolding(false)}
+          onPointerUp={endHold}
+          onPointerLeave={endHold}
+          onPointerCancel={endHold}
           aria-label="按住求签"
           className="relative grid h-[60vh] max-h-[520px] w-full place-items-center touch-none select-none"
         >
