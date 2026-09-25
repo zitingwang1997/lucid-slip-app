@@ -6,6 +6,7 @@ import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
 import { checkSameDayQuestion } from "@/lib/similarity.functions";
+import { preloadSlipImages } from "@/lib/slip-image";
 import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -59,6 +60,10 @@ function QuestionPage() {
   const proceed = async () => {
     const text = q.trim();
     if (!text || checking) return;
+
+    // Warm the small same-origin sign assets while the duplicate-question
+    // check and drawing ritual are running. This matters in WeChat/mainland.
+    preloadSlipImages();
 
     // Check today's previously-asked questions for semantic similarity.
     const today = getTodayHistory();
@@ -203,7 +208,7 @@ function QuestionPage() {
               boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
             }}
           >
-            {checking ? "静观片刻…" : "求一支签"}
+            {checking ? "正在准备求签…" : "求一支签"}
           </button>
         </div>
       </main>

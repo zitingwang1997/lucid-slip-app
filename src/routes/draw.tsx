@@ -10,7 +10,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
-import { preloadSlipImage } from "@/lib/slip-image";
+import { preloadSlipImage, preloadSlipImages } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
 
 export const Route = createFileRoute("/draw")({
@@ -230,6 +230,7 @@ function DrawPage() {
         <button
           onPointerDown={() => {
             setError(null);
+            preloadSlipImages();
             if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
             warmupTimer.current = window.setTimeout(() => {
               warmupTimer.current = null;

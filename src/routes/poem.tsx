@@ -357,13 +357,14 @@ function PoemPage() {
               slip={slip}
               alt={slip.title ? `${slip.title}签面` : "签面"}
               fetchPriority="high"
+              readyDelayMs={380}
               onReady={() => setRevealed(true)}
               imgClassName="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
               imgStyle={{
                 WebkitTouchCallout: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
-                transition: "opacity 600ms ease",
+                transition: "opacity 360ms ease",
               }}
               errorClassName="absolute bottom-[4%] left-1/2 z-20 -translate-x-1/2 rounded-full border border-[rgba(55,38,24,0.2)] bg-[rgba(245,239,227,0.85)] px-4 py-2 font-serif-sc text-[10px] tracking-[0.18em] text-[rgba(55,38,24,0.62)]"
             />

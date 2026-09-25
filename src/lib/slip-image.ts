@@ -63,6 +63,7 @@ export function preloadSlipImages() {
     if (preloadCache.has(url)) continue;
     const image = new Image();
     image.decoding = "async";
+    image.fetchPriority = "low";
     image.src = url;
     preloadCache.set(url, image);
   }
@@ -73,10 +74,17 @@ export function preloadSlipImage(slip: SelectedSlip) {
   if (typeof window === "undefined") return;
 
   const { primary } = getSlipImageSources(slip);
-  if (!primary || preloadCache.has(primary)) return;
+  if (!primary) return;
+
+  const cached = preloadCache.get(primary);
+  if (cached) {
+    cached.fetchPriority = "high";
+    return;
+  }
 
   const image = new Image();
   image.decoding = "async";
+  image.fetchPriority = "high";
   image.src = primary;
   preloadCache.set(primary, image);
 }

@@ -12,6 +12,7 @@ interface SlipImageProps {
   imgStyle?: CSSProperties;
   loading?: "eager" | "lazy";
   fetchPriority?: "high" | "low" | "auto";
+  readyDelayMs?: number;
   onReady?: () => void;
 }
 
@@ -19,6 +20,10 @@ const DECODE_GRACE_MS = 400;
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+function nextFrame() {
+  return new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
 }
 
 export function SlipImage({
@@ -29,6 +34,7 @@ export function SlipImage({
   imgStyle,
   loading = "eager",
   fetchPriority = "auto",
+  readyDelayMs = 0,
   onReady,
 }: SlipImageProps) {
   const sources = getSlipImageSources(slip);
@@ -51,6 +57,14 @@ export function SlipImage({
 
     if (!image.isConnected || image.currentSrc !== loadedSrc) return;
     setStatus("loaded");
+
+    // React and WeChat's WebView can commit the parent state before the image
+    // has painted its first visible frame. Let the image render first, then
+    // unlock dependent text and gestures after its short fade-in.
+    await nextFrame();
+    await nextFrame();
+    if (readyDelayMs > 0) await wait(readyDelayMs);
+    if (!image.isConnected || image.currentSrc !== loadedSrc) return;
     onReady?.();
   };
 
