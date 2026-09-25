@@ -7,6 +7,7 @@ import {
   runHistoryMigration,
   type HistoryEntry,
 } from "@/lib/fortune-store";
+import { getSlipImageSources } from "@/lib/slip-image";
 
 export const Route = createFileRoute("/temple")({
   head: () => ({ meta: [{ title: "心庙 · 一签" }] }),
@@ -57,7 +58,9 @@ function TemplePage() {
     <Shell intensity={0.4} showTemple={false}>
       <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-6 pb-20 pt-8">
         <header className="slow-fade-in text-center">
-          <p className="text-[10px] tracking-[0.5em] uppercase text-foreground/40">Personal Temple</p>
+          <p className="text-[10px] tracking-[0.5em] uppercase text-foreground/40">
+            Personal Temple
+          </p>
           <h1 className="mt-3 font-serif-sc text-3xl tracking-[0.4em] text-ivory">心 庙</h1>
           <p className="mt-4 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">
             你走过的每一念，皆在此安放。
@@ -71,7 +74,9 @@ function TemplePage() {
               style={{ boxShadow: "0 0 24px var(--primary)" }}
             />
             <p className="mt-8 font-serif-sc text-[14px] leading-[2] text-foreground/55">
-              心庙尚空。<br />求一支签，便是第一念。
+              心庙尚空。
+              <br />
+              求一支签，便是第一念。
             </p>
             <Link
               to="/"
@@ -86,6 +91,7 @@ function TemplePage() {
               const savedKits = e.savedKits ? Object.values(e.savedKits) : [];
               const slipNumber = e.slip?.number;
               const slipTitle = e.slip?.title;
+              const slipImageSources = e.slip ? getSlipImageSources(e.slip) : null;
               return (
                 <div
                   key={e.id}
@@ -108,47 +114,58 @@ function TemplePage() {
                   }}
                 >
                   <div className="flex gap-4 p-4 items-stretch">
-  <div className="shrink-0">
-    {(e.slip?.image_url as string | undefined) ? (
-      <img
-        src={e.slip.image_url as string}
-        alt="签"
-        className="block h-28 w-20 rounded-md object-cover"
-        draggable={false}
-      />
-    ) : (
-      <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
-        签面缺失
-      </div>
-    )}
-  </div>
-  <div className="min-w-0 flex-1 flex flex-col justify-between h-28">
-    <div>
-      <p className="text-[10px] tracking-[0.35em] uppercase text-foreground/35">
-        {formatDate(e.createdAt)}
-      </p>
-      {(slipNumber || slipTitle) && (
-        <p className="mt-1 font-serif-sc text-[13px] tracking-[0.2em] text-ivory/85">
-          {slipNumber ? `第 ${slipNumber} 签` : ""}
-          {slipNumber && slipTitle ? " · " : ""}
-          {slipTitle ?? ""}
-        </p>
-      )}
-    </div>
-    <div>
-      {e.question && (
-        <p className="line-clamp-1 font-serif-sc text-[11px] leading-[1.7] text-foreground/65">
-          「{e.question}」
-        </p>
-      )}
-      {e.slip?.poem && (
-        <p className="mt-0.5 line-clamp-2 font-serif-sc text-[11px] leading-[1.8] text-foreground/38">
-          {e.slip.poem}
-        </p>
-      )}
-    </div>
-  </div>
-</div>
+                    <div className="shrink-0">
+                      {slipImageSources?.primary ? (
+                        <img
+                          src={slipImageSources.primary}
+                          alt="签"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(event) => {
+                            if (
+                              slipImageSources.fallback &&
+                              event.currentTarget.dataset.fallbackApplied !== "true"
+                            ) {
+                              event.currentTarget.dataset.fallbackApplied = "true";
+                              event.currentTarget.src = slipImageSources.fallback;
+                            }
+                          }}
+                          className="block h-28 w-20 rounded-md object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
+                          签面缺失
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 flex flex-col justify-between h-28">
+                      <div>
+                        <p className="text-[10px] tracking-[0.35em] uppercase text-foreground/35">
+                          {formatDate(e.createdAt)}
+                        </p>
+                        {(slipNumber || slipTitle) && (
+                          <p className="mt-1 font-serif-sc text-[13px] tracking-[0.2em] text-ivory/85">
+                            {slipNumber ? `第 ${slipNumber} 签` : ""}
+                            {slipNumber && slipTitle ? " · " : ""}
+                            {slipTitle ?? ""}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        {e.question && (
+                          <p className="line-clamp-1 font-serif-sc text-[11px] leading-[1.7] text-foreground/65">
+                            「{e.question}」
+                          </p>
+                        )}
+                        {e.slip?.poem && (
+                          <p className="mt-0.5 line-clamp-2 font-serif-sc text-[11px] leading-[1.8] text-foreground/38">
+                            {e.slip.poem}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   <div className="border-t border-border/30 px-4 py-3">
                     {savedKits.length === 0 ? (
                       <p className="font-serif-sc text-[11px] tracking-[0.3em] text-foreground/35">
@@ -216,8 +233,7 @@ function TemplePage() {
               borderColor: "oklch(0.74 0.13 55 / 0.24)",
               background:
                 "radial-gradient(circle at 50% 0%, oklch(0.74 0.13 55 / 0.12), transparent 42%), linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.14 0.012 50) 100%)",
-              boxShadow:
-                "0 30px 90px oklch(0 0 0 / 0.55), 0 0 50px oklch(0.74 0.13 55 / 0.12)",
+              boxShadow: "0 30px 90px oklch(0 0 0 / 0.55), 0 0 50px oklch(0.74 0.13 55 / 0.12)",
             }}
           >
             <button
@@ -231,9 +247,7 @@ function TemplePage() {
 
             <div className="flex items-center justify-center gap-3">
               <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
-              <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
-                POUCH
-              </span>
+              <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">POUCH</span>
               <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
             </div>
 

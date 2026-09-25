@@ -21,6 +21,7 @@ import {
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
+import { getSlipImageSources } from "@/lib/slip-image";
 
 export const Route = createFileRoute("/interpret")({
   head: () => ({ meta: [{ title: "解签 · 一签" }] }),
@@ -275,6 +276,8 @@ function InterpretPage() {
 
   if (!slip) return null;
 
+  const slipImageSources = getSlipImageSources(slip);
+
   if (!result && interpretError && !interpretLoading) {
     return (
       <Shell intensity={0.5}>
@@ -288,7 +291,6 @@ function InterpretPage() {
       </Shell>
     );
   }
-
 
   const xiang = result?.xiang_content ?? "";
   const yi = result?.yi_content ?? "";
@@ -332,7 +334,7 @@ function InterpretPage() {
       <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-10 px-6 pb-24 pt-4">
         <section className="slow-fade-in pt-2">
           <div className="mx-auto w-full" style={{ maxWidth: 520 }}>
-            {slip.image_url ? (
+            {slipImageSources.primary ? (
               <div
                 className="relative mx-auto w-[88%] select-none"
                 onContextMenu={(e) => e.preventDefault()}
@@ -340,21 +342,25 @@ function InterpretPage() {
                   aspectRatio: "848 / 1489",
                   maxWidth: 460,
                   containerType: "inline-size",
-                  filter: "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                  filter:
+                    "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
                 }}
               >
-                <div
-                  aria-label={slip.title ?? "签"}
-                  className="pointer-events-none absolute inset-0 h-full w-full select-none"
-                  style={{
-                    backgroundImage: `url(${slip.image_url})`,
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    WebkitTouchCallout: "none",
-                    WebkitUserSelect: "none",
-                    userSelect: "none",
+                <img
+                  src={slipImageSources.primary}
+                  alt={slip.title ? `${slip.title}签面` : "签面"}
+                  decoding="async"
+                  draggable={false}
+                  onError={(event) => {
+                    if (
+                      slipImageSources.fallback &&
+                      event.currentTarget.dataset.fallbackApplied !== "true"
+                    ) {
+                      event.currentTarget.dataset.fallbackApplied = "true";
+                      event.currentTarget.src = slipImageSources.fallback;
+                    }
                   }}
+                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
                 />
 
                 <div
@@ -452,7 +458,9 @@ function InterpretPage() {
         </Section>
 
         <Section eyebrow="解惑锦囊" title="解惑锦囊" delay={800}>
-          <p className="-mt-3 mb-6 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">从签中取一味解药</p>
+          <p className="-mt-3 mb-6 font-serif-sc text-[12px] tracking-[0.2em] text-foreground/45">
+            从签中取一味解药
+          </p>
           <div className="flex flex-wrap gap-2.5">
             {guidanceItems.map((r, i) => (
               <button
@@ -461,8 +469,10 @@ function InterpretPage() {
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                  background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
-                  boxShadow: "0 0 18px oklch(0.74 0.13 55 / 0.10), inset 0 1px 0 oklch(1 0 0 / 0.05)",
+                  background:
+                    "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                  boxShadow:
+                    "0 0 18px oklch(0.74 0.13 55 / 0.10), inset 0 1px 0 oklch(1 0 0 / 0.05)",
                   animationDelay: `${900 + i * 90}ms`,
                 }}
               >
@@ -492,7 +502,8 @@ function InterpretPage() {
         <DrawerContent
           className="border-border/50 px-6 pb-12 pt-2"
           style={{
-            background: "linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.16 0.012 50) 100%)",
+            background:
+              "linear-gradient(180deg, oklch(0.20 0.018 55) 0%, oklch(0.16 0.012 50) 100%)",
             boxShadow: "0 -30px 80px -20px oklch(0.74 0.13 55 / 0.18)",
           }}
         >
@@ -501,7 +512,9 @@ function InterpretPage() {
               <DrawerTitle className="sr-only">{openItem.label}</DrawerTitle>
               <div className="mt-4 flex items-center justify-center gap-3">
                 <span className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
-                <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">Pouch</span>
+                <span className="text-[10px] tracking-[0.5em] uppercase text-primary/70">
+                  Pouch
+                </span>
                 <span className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
               </div>
               <p
@@ -542,7 +555,8 @@ function InterpretPage() {
                       className="rounded-2xl border px-5 py-4"
                       style={{
                         borderColor: "oklch(0.74 0.13 55 / 0.28)",
-                        background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
+                        background:
+                          "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.08), oklch(0.22 0.014 55 / 0.35))",
                       }}
                     >
                       <p className="mb-2 text-center font-serif-sc text-[11px] tracking-[0.4em] uppercase text-primary/70">
@@ -572,7 +586,8 @@ function InterpretPage() {
                         className="rounded-full border px-6 py-2 font-serif-sc text-[12px] tracking-[0.4em] text-ivory/90 transition-all hover:text-ivory"
                         style={{
                           borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                          background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                          background:
+                            "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
                         }}
                       >
                         收 入 心 庙
@@ -599,7 +614,8 @@ function InterpretPage() {
                     className="rounded-full border px-5 py-2 font-serif-sc text-[12px] tracking-[0.3em] text-ivory/90 transition-all hover:text-ivory"
                     style={{
                       borderColor: "oklch(0.74 0.13 55 / 0.32)",
-                      background: "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
+                      background:
+                        "linear-gradient(180deg, oklch(0.74 0.13 55 / 0.10), oklch(0.22 0.014 55 / 0.4))",
                     }}
                   >
                     重新求取
@@ -635,7 +651,10 @@ function Section({
         <span className="text-[10px] tracking-[0.4em] text-primary/70">{eyebrow}</span>
         <span className="h-px flex-1 bg-border/60" />
       </div>
-      <h2 className="mb-4 font-serif-sc text-lg tracking-[0.3em] text-ivory" style={{ fontWeight: 400 }}>
+      <h2
+        className="mb-4 font-serif-sc text-lg tracking-[0.3em] text-ivory"
+        style={{ fontWeight: 400 }}
+      >
         {title}
       </h2>
       {children}
@@ -645,7 +664,9 @@ function Section({
 
 function ReadingBody({ text, placeholder }: { text: string; placeholder: string }) {
   if (!text) {
-    return <p className="font-serif-sc text-[13px] leading-[2] text-foreground/40">{placeholder}</p>;
+    return (
+      <p className="font-serif-sc text-[13px] leading-[2] text-foreground/40">{placeholder}</p>
+    );
   }
   return (
     <div className="space-y-3">
