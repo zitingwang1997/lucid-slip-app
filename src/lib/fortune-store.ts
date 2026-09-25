@@ -136,13 +136,15 @@ export function getTodayHistory(now: number = Date.now()): HistoryEntry[] {
 const HIST_KEY = "oneslip.history.v2";
 const HIST_MIGRATION_KEY = "oneslip.history.migrated.v4";
 
-/** One-time dev migration: clear old history entries that lack interpretation / savedKits.
- *  Runs only once per browser; future entries are preserved. */
+/**
+ * Mark the legacy migration as complete without deleting user history.
+ * Older versions cleared HIST_KEY here, which erased the first saved question
+ * the first time a user opened the temple.
+ */
 export function runHistoryMigration() {
   if (typeof window === "undefined") return;
   try {
     if (localStorage.getItem(HIST_MIGRATION_KEY)) return;
-    localStorage.removeItem(HIST_KEY);
     localStorage.setItem(HIST_MIGRATION_KEY, "true");
   } catch {}
 }

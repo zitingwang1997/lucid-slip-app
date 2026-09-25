@@ -1,40 +1,72 @@
 import type { SelectedSlip } from "@/lib/fortune-store";
+import jiJingxinUrl from "@/assets/qian-images/ji-jingxin.webp";
+import pingWukongUrl from "@/assets/qian-images/ping-wukong.webp";
+import shangjiMingxinAUrl from "@/assets/qian-images/shangji-mingxin-a.webp";
+import shangjiMingxinBUrl from "@/assets/qian-images/shangji-mingxin-b.webp";
+import xiaShihuaiAUrl from "@/assets/qian-images/xia-shihuai-a.webp";
+import xiaShihuaiBUrl from "@/assets/qian-images/xia-shihuai-b.webp";
+import zhongpingPojuUrl from "@/assets/qian-images/zhongping-poju.webp";
+
+export const SLIP_IMAGE_URLS = [
+  shangjiMingxinAUrl,
+  shangjiMingxinBUrl,
+  jiJingxinUrl,
+  zhongpingPojuUrl,
+  xiaShihuaiAUrl,
+  xiaShihuaiBUrl,
+  pingWukongUrl,
+] as const;
 
 const LOCAL_IMAGE_BY_QIAN_NUMBER: Record<number, string> = {
-  1: "/qian-images/shangji-mingxin-a.webp",
-  2: "/qian-images/shangji-mingxin-b.webp",
-  3: "/qian-images/shangji-mingxin-a.webp",
-  4: "/qian-images/shangji-mingxin-b.webp",
-  5: "/qian-images/shangji-mingxin-a.webp",
-  6: "/qian-images/shangji-mingxin-b.webp",
-  7: "/qian-images/ji-jingxin.webp",
-  8: "/qian-images/ji-jingxin.webp",
-  9: "/qian-images/ji-jingxin.webp",
-  10: "/qian-images/ji-jingxin.webp",
-  11: "/qian-images/ji-jingxin.webp",
-  12: "/qian-images/ji-jingxin.webp",
-  13: "/qian-images/zhongping-poju.webp",
-  14: "/qian-images/zhongping-poju.webp",
-  15: "/qian-images/zhongping-poju.webp",
-  16: "/qian-images/zhongping-poju.webp",
-  17: "/qian-images/zhongping-poju.webp",
-  18: "/qian-images/zhongping-poju.webp",
-  19: "/qian-images/xia-shihuai-a.webp",
-  20: "/qian-images/xia-shihuai-b.webp",
-  21: "/qian-images/xia-shihuai-b.webp",
-  22: "/qian-images/xia-shihuai-a.webp",
-  23: "/qian-images/xia-shihuai-a.webp",
-  24: "/qian-images/xia-shihuai-b.webp",
-  25: "/qian-images/ping-wukong.webp",
-  26: "/qian-images/ping-wukong.webp",
-  27: "/qian-images/ping-wukong.webp",
-  28: "/qian-images/ping-wukong.webp",
-  29: "/qian-images/ping-wukong.webp",
-  30: "/qian-images/ping-wukong.webp",
-  31: "/qian-images/shangji-mingxin-a.webp",
-  32: "/qian-images/shangji-mingxin-a.webp",
-  33: "/qian-images/shangji-mingxin-b.webp",
+  1: shangjiMingxinAUrl,
+  2: shangjiMingxinBUrl,
+  3: shangjiMingxinAUrl,
+  4: shangjiMingxinBUrl,
+  5: shangjiMingxinAUrl,
+  6: shangjiMingxinBUrl,
+  7: jiJingxinUrl,
+  8: jiJingxinUrl,
+  9: jiJingxinUrl,
+  10: jiJingxinUrl,
+  11: jiJingxinUrl,
+  12: jiJingxinUrl,
+  13: zhongpingPojuUrl,
+  14: zhongpingPojuUrl,
+  15: zhongpingPojuUrl,
+  16: zhongpingPojuUrl,
+  17: zhongpingPojuUrl,
+  18: zhongpingPojuUrl,
+  19: xiaShihuaiAUrl,
+  20: xiaShihuaiBUrl,
+  21: xiaShihuaiBUrl,
+  22: xiaShihuaiAUrl,
+  23: xiaShihuaiAUrl,
+  24: xiaShihuaiBUrl,
+  25: pingWukongUrl,
+  26: pingWukongUrl,
+  27: pingWukongUrl,
+  28: pingWukongUrl,
+  29: pingWukongUrl,
+  30: pingWukongUrl,
+  31: shangjiMingxinAUrl,
+  32: shangjiMingxinAUrl,
+  33: shangjiMingxinBUrl,
 };
+
+const preloadCache = new Map<string, HTMLImageElement>();
+
+/** Start downloading all seven small sign faces during the drawing ritual. */
+export function preloadSlipImages() {
+  if (typeof window === "undefined") return;
+
+  for (const url of SLIP_IMAGE_URLS) {
+    if (preloadCache.has(url)) continue;
+    const image = new Image();
+    image.decoding = "async";
+    image.src = url;
+    preloadCache.set(url, image);
+  }
+}
 
 function getQianNumber(slip: SelectedSlip): number | null {
   const imageMatch = slip.image_url?.match(/qian_(\d+)\.(?:png|webp)(?:$|[?#])/i);

@@ -10,6 +10,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
+import { preloadSlipImages } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
 
 export const Route = createFileRoute("/draw")({
@@ -84,7 +85,6 @@ function DrawPage() {
     }
   };
 
-
   useEffect(() => {
     const tick = (ts: number) => {
       if (!startTs.current) startTs.current = ts;
@@ -126,14 +126,14 @@ function DrawPage() {
   const guidance = error
     ? error
     : completed.current
-    ? "签意已现"
-    : progress < 0.05
-    ? "按住光线，静心片刻"
-    : progress < 0.5
-    ? "让呼吸慢下来"
-    : progress < 0.95
-    ? "签意正在显现"
-    : "天意将至";
+      ? "签意已现"
+      : progress < 0.05
+        ? "按住光线，静心片刻"
+        : progress < 0.5
+          ? "让呼吸慢下来"
+          : progress < 0.95
+            ? "签意正在显现"
+            : "天意将至";
 
   return (
     <Shell intensity={0.9} showTemple={false}>
@@ -164,6 +164,7 @@ function DrawPage() {
         <button
           onPointerDown={() => {
             setError(null);
+            preloadSlipImages();
             setHolding(true);
           }}
           onPointerUp={() => setHolding(false)}

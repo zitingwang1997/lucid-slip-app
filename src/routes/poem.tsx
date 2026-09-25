@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { RitualErrorScreen } from "@/components/RitualErrorScreen";
+import { SlipImage } from "@/components/SlipImage";
 
 import {
   getInterpretCacheV2,
@@ -14,7 +15,6 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { interpretSlip } from "@/lib/dify.functions";
-import { getSlipImageSources } from "@/lib/slip-image";
 
 export const Route = createFileRoute("/poem")({
   head: () => ({ meta: [{ title: "签诗 · 一签" }] }),
@@ -41,16 +41,12 @@ function PoemPage() {
   const interpretSlipFn = useServerFn(interpretSlip);
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [imageReady, setImageReady] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
-  const [imageSrc, setImageSrc] = useState("");
-  const [usingImageFallback, setUsingImageFallback] = useState(false);
   const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [awaitingInterpret, setAwaitingInterpret] = useState(false);
   const inflight = useRef(false);
   const holdRaf = useRef<number | null>(null);
-  const revealRaf = useRef<number | null>(null);
+  const revealTimer = useRef<number | null>(null);
   const holdStart = useRef<number>(0);
   const holdProgress = useRef(0);
   const holdCompleted = useRef(false);
@@ -147,13 +143,9 @@ function PoemPage() {
       return;
     }
 
-    const imageSources = getSlipImageSources(s);
     setSlip(s);
-    setImageSrc(imageSources.primary);
-    setUsingImageFallback(false);
-    setImageReady(false);
-    setImageFailed(false);
     setRevealed(false);
+    revealTimer.current = window.setTimeout(() => setRevealed(true), 450);
 
     const cached = getInterpretCacheV2();
     console.log("[POEM] interpret cache:", cached);
@@ -175,7 +167,7 @@ function PoemPage() {
     }
 
     return () => {
-      if (revealRaf.current != null) cancelAnimationFrame(revealRaf.current);
+      if (revealTimer.current != null) window.clearTimeout(revealTimer.current);
       if (holdRaf.current != null) cancelAnimationFrame(holdRaf.current);
     };
   }, [navigate, runInterpret]);
@@ -206,7 +198,7 @@ function PoemPage() {
   };
 
   const beginHold = () => {
-    if (!imageReady || imageFailed) return;
+    if (!revealed) return;
     if (holdCompleted.current) return;
     if (interpretStatus === "error") return;
     holdStart.current = 0;
@@ -245,48 +237,6 @@ function PoemPage() {
     holdRaf.current = requestAnimationFrame(decayTick);
   };
 
-  const handleImageLoad = async (image: HTMLImageElement) => {
-    const loadedSrc = image.currentSrc;
-    try {
-      await image.decode();
-    } catch {
-      // A completed load is still usable when a browser rejects decode().
-    }
-    if (!image.isConnected || image.currentSrc !== loadedSrc) return;
-
-    setImageFailed(false);
-    setImageReady(true);
-    revealRaf.current = requestAnimationFrame(() => {
-      revealRaf.current = requestAnimationFrame(() => setRevealed(true));
-    });
-  };
-
-  const handleImageError = () => {
-    if (!slip) return;
-    const sources = getSlipImageSources(slip);
-    if (!usingImageFallback && sources.fallback && sources.fallback !== imageSrc) {
-      setUsingImageFallback(true);
-      setImageReady(false);
-      setImageSrc(sources.fallback);
-      return;
-    }
-    setImageReady(false);
-    setImageFailed(true);
-  };
-
-  const retryImage = () => {
-    if (!slip) return;
-    const sources = getSlipImageSources(slip);
-    const source = sources.primary || sources.fallback;
-    if (!source) return;
-    const separator = source.includes("?") ? "&" : "?";
-    setRevealed(false);
-    setImageReady(false);
-    setImageFailed(false);
-    setUsingImageFallback(false);
-    setImageSrc(`${source}${separator}retry=${Date.now()}`);
-  };
-
   /**
    * 报错后回到签面。用户已经抽到签了，不该把他丢回首页重来。
    * 状态清回 idle 让签诗重新露出来，同时后台重新发起解签请求 ——
@@ -303,9 +253,6 @@ function PoemPage() {
   };
 
   if (!slip) return null;
-
-  const imageSources = getSlipImageSources(slip);
-  const displayedImageSrc = imageSrc || imageSources.primary;
 
   if (interpretStatus === "error") {
     return (
@@ -374,158 +321,130 @@ function PoemPage() {
             margin: "0 auto",
           }}
         >
-          {displayedImageSrc ? (
-            <div
-              className={`relative mx-auto w-[88%] touch-none select-none ${imageReady ? "cursor-pointer" : "cursor-default"}`}
-              aria-disabled={!imageReady || imageFailed}
-              onContextMenu={(e) => e.preventDefault()}
-              onPointerDown={(e) => {
-                if (!imageReady || imageFailed) return;
-                (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-                beginHold();
-              }}
-              onPointerUp={endHold}
-              onPointerLeave={endHold}
-              onPointerCancel={endHold}
-              style={{
-                aspectRatio: "848 / 1489",
-                maxWidth: 460,
-                containerType: "inline-size",
+          <div
+            className={`relative mx-auto w-[88%] touch-none select-none ${revealed ? "cursor-pointer" : "cursor-default"}`}
+            aria-disabled={!revealed}
+            onContextMenu={(e) => e.preventDefault()}
+            onPointerDown={(e) => {
+              if (!revealed) return;
+              (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+              beginHold();
+            }}
+            onPointerUp={endHold}
+            onPointerLeave={endHold}
+            onPointerCancel={endHold}
+            style={{
+              aspectRatio: "848 / 1489",
+              maxWidth: 460,
+              containerType: "inline-size",
+              WebkitTouchCallout: "none",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              overflow: "hidden",
+              borderRadius: 4,
+              background: "linear-gradient(150deg, rgb(235 229 217) 0%, rgb(224 215 199) 100%)",
+              filter:
+                "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+            }}
+          >
+            <SlipImage
+              slip={slip}
+              alt={slip.title ? `${slip.title}签面` : "签面"}
+              fetchPriority="high"
+              onReady={() => setRevealed(true)}
+              imgClassName="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+              imgStyle={{
                 WebkitTouchCallout: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
-                filter:
-                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                transition: "opacity 600ms ease",
               }}
-            >
-              <img
-                src={displayedImageSrc}
-                alt={slip.title ? `${slip.title}签面` : "签面"}
-                decoding="async"
-                fetchPriority="high"
-                draggable={false}
-                onLoad={(event) => void handleImageLoad(event.currentTarget)}
-                onError={handleImageError}
-                className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+              errorClassName="absolute bottom-[4%] left-1/2 z-20 -translate-x-1/2 rounded-full border border-[rgba(55,38,24,0.2)] bg-[rgba(245,239,227,0.85)] px-4 py-2 font-serif-sc text-[10px] tracking-[0.18em] text-[rgba(55,38,24,0.62)]"
+            />
+
+            {/* Top-left: Chinese number */}
+            {revealed && (
+              <div
+                className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
                 style={{
-                  opacity: revealed ? 1 : 0,
-                  transform: revealed ? "translateY(0)" : "translateY(8px)",
-                  transition: "opacity 700ms ease, transform 900ms ease",
-                  WebkitTouchCallout: "none",
-                  WebkitUserSelect: "none",
-                  userSelect: "none",
+                  left: "8%",
+                  top: "3.8%",
+                  fontSize: "3.8cqi",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  lineHeight: 1.15,
                 }}
-              />
+              >
+                {slip.number}
+              </div>
+            )}
 
-              {!imageReady && !imageFailed && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif-sc text-xs tracking-[0.35em] text-foreground/35">
-                  签 面 显 现 中
-                </div>
-              )}
+            {/* Top-right: poem title */}
+            {revealed && (
+              <div
+                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
+                style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.08em" }}
+              >
+                <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
+              </div>
+            )}
 
-              {imageFailed && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[24px] border border-primary/20 bg-background/75 font-serif-sc backdrop-blur-sm">
-                  <span className="text-xs tracking-[0.25em] text-foreground/55">
-                    签 面 暂 未 显 现
-                  </span>
-                  <button
-                    type="button"
-                    onClick={retryImage}
-                    className="rounded-full border border-primary/35 px-5 py-2 text-xs tracking-[0.3em] text-primary transition-colors hover:bg-primary/10"
-                  >
-                    重 试
-                  </button>
-                </div>
-              )}
-
-              {/* Top-left: Chinese number */}
-              {imageReady && (
-                <div
-                  className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
+            {/* Right vertical column: lines 1-2 (rightmost line first) */}
+            <div
+              className="pointer-events-none absolute flex flex-row-reverse"
+              style={{ right: "7%", top: "20%", height: "78%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+            >
+              {revealed && (
+                <span
+                  className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
                   style={{
-                    left: "8%",
-                    top: "3.8%",
-                    fontSize: "3.8cqi",
-                    fontWeight: 500,
-                    letterSpacing: "0.08em",
-                    lineHeight: 1.15,
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: poemFontSize,
+                    lineHeight: 1.25,
+                    fontWeight: 600,
+                    animationDelay: "600ms",
                   }}
                 >
-                  {slip.number}
-                </div>
+                  {rightColumn}
+                </span>
               )}
+            </div>
 
-              {/* Top-right: poem title */}
-              {imageReady && (
-                <div
-                  className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
-                  style={{ right: "8%", top: "3.8%", lineHeight: 1.15, letterSpacing: "0.08em" }}
+            {/* Left vertical column: lines 3-4 (rightmost line first) */}
+            <div
+              className="pointer-events-none absolute flex flex-row-reverse"
+              style={{ left: "7%", top: "20%", height: "78%", gap: "clamp(4px, 1.6cqi, 14px)" }}
+            >
+              {revealed && (
+                <span
+                  className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: poemFontSize,
+                    lineHeight: 1.25,
+                    fontWeight: 600,
+                    animationDelay: "2.2s",
+                  }}
                 >
-                  <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
-                </div>
+                  {leftColumn}
+                </span>
               )}
-
-              {/* Right vertical column: lines 1-2 (rightmost line first) */}
-              <div
-                className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ right: "7%", top: "20%", height: "78%", gap: "clamp(4px, 1.6cqi, 14px)" }}
-              >
-                {imageReady && (
-                  <span
-                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: poemFontSize,
-                      lineHeight: 1.25,
-                      fontWeight: 600,
-                      animationDelay: "600ms",
-                    }}
-                  >
-                    {rightColumn}
-                  </span>
-                )}
-              </div>
-
-              {/* Left vertical column: lines 3-4 (rightmost line first) */}
-              <div
-                className="pointer-events-none absolute flex flex-row-reverse"
-                style={{ left: "7%", top: "20%", height: "78%", gap: "clamp(4px, 1.6cqi, 14px)" }}
-              >
-                {imageReady && (
-                  <span
-                    className="poem-line-reveal font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: poemFontSize,
-                      lineHeight: 1.25,
-                      fontWeight: 600,
-                      animationDelay: "2.2s",
-                    }}
-                  >
-                    {leftColumn}
-                  </span>
-                )}
-              </div>
-
-              {/* Golden hold feedback */}
-              <div
-                ref={holdVisual}
-                className="poem-hold-glow pointer-events-none absolute inset-0 overflow-hidden"
-              >
-                <div className="poem-hold-glow__wash absolute inset-0" />
-                <div className="poem-hold-glow__sweep absolute inset-y-[-15%] left-[-22%] w-[44%]" />
-                <div className="poem-hold-glow__core absolute left-1/2 top-1/2 h-24 w-24 rounded-full" />
-              </div>
             </div>
-          ) : (
-            <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
-              签面缺失
+
+            {/* Golden hold feedback */}
+            <div
+              ref={holdVisual}
+              className="poem-hold-glow pointer-events-none absolute inset-0 overflow-hidden"
+            >
+              <div className="poem-hold-glow__wash absolute inset-0" />
+              <div className="poem-hold-glow__sweep absolute inset-y-[-15%] left-[-22%] w-[44%]" />
+              <div className="poem-hold-glow__core absolute left-1/2 top-1/2 h-24 w-24 rounded-full" />
             </div>
-          )}
+          </div>
         </div>
 
         {revealed && (

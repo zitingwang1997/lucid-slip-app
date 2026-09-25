@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { RitualErrorScreen } from "@/components/RitualErrorScreen";
+import { SlipImage } from "@/components/SlipImage";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
@@ -21,7 +22,6 @@ import {
   type InterpretationResult,
   type SelectedSlip,
 } from "@/lib/fortune-store";
-import { getSlipImageSources } from "@/lib/slip-image";
 
 export const Route = createFileRoute("/interpret")({
   head: () => ({ meta: [{ title: "解签 · 一签" }] }),
@@ -276,8 +276,6 @@ function InterpretPage() {
 
   if (!slip) return null;
 
-  const slipImageSources = getSlipImageSources(slip);
-
   if (!result && interpretError && !interpretLoading) {
     return (
       <Shell intensity={0.5}>
@@ -334,114 +332,98 @@ function InterpretPage() {
       <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-10 px-6 pb-24 pt-4">
         <section className="slow-fade-in pt-2">
           <div className="mx-auto w-full" style={{ maxWidth: 520 }}>
-            {slipImageSources.primary ? (
+            <div
+              className="relative mx-auto w-[88%] select-none overflow-hidden bg-[rgb(229,221,207)]"
+              onContextMenu={(e) => e.preventDefault()}
+              style={{
+                aspectRatio: "848 / 1489",
+                maxWidth: 460,
+                containerType: "inline-size",
+                filter:
+                  "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+              }}
+            >
+              <SlipImage
+                slip={slip}
+                alt={slip.title ? `${slip.title}签面` : "签面"}
+                imgClassName="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+                errorClassName="absolute bottom-[4%] left-1/2 z-20 -translate-x-1/2 rounded-full border border-[rgba(55,38,24,0.2)] bg-[rgba(245,239,227,0.85)] px-4 py-2 font-serif-sc text-[10px] tracking-[0.18em] text-[rgba(55,38,24,0.62)]"
+              />
+
               <div
-                className="relative mx-auto w-[88%] select-none"
-                onContextMenu={(e) => e.preventDefault()}
+                className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
                 style={{
-                  aspectRatio: "848 / 1489",
-                  maxWidth: 460,
-                  containerType: "inline-size",
-                  filter:
-                    "drop-shadow(0 30px 60px oklch(0 0 0 / 0.6)) drop-shadow(0 0 50px oklch(0.74 0.13 55 / 0.2))",
+                  left: "8%",
+                  top: "3.8%",
+                  fontSize: "3.8cqi",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  lineHeight: 1.15,
                 }}
               >
-                <img
-                  src={slipImageSources.primary}
-                  alt={slip.title ? `${slip.title}签面` : "签面"}
-                  decoding="async"
-                  draggable={false}
-                  onError={(event) => {
-                    if (
-                      slipImageSources.fallback &&
-                      event.currentTarget.dataset.fallbackApplied !== "true"
-                    ) {
-                      event.currentTarget.dataset.fallbackApplied = "true";
-                      event.currentTarget.src = slipImageSources.fallback;
-                    }
-                  }}
-                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
-                />
-
-                <div
-                  className="pointer-events-none absolute font-serif-sc text-[rgba(55,38,24,0.82)]"
-                  style={{
-                    left: "8%",
-                    top: "3.8%",
-                    fontSize: "3.8cqi",
-                    fontWeight: 500,
-                    letterSpacing: "0.08em",
-                    lineHeight: 1.15,
-                  }}
-                >
-                  {slip.number}
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
-                  style={{
-                    right: "8%",
-                    top: "3.8%",
-                    lineHeight: 1.15,
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-row-reverse"
-                  style={{
-                    right: "7%",
-                    top: "20%",
-                    height: "78%",
-                    gap: "clamp(4px, 1.6cqi, 14px)",
-                  }}
-                >
-                  <span
-                    className="font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: poemFontSize,
-                      fontWeight: 600,
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {rightColumn}
-                  </span>
-                </div>
-
-                <div
-                  className="pointer-events-none absolute flex flex-row-reverse"
-                  style={{
-                    left: "7%",
-                    top: "20%",
-                    height: "78%",
-                    gap: "clamp(4px, 1.6cqi, 14px)",
-                  }}
-                >
-                  <span
-                    className="font-serif-sc text-[rgba(55,38,24,0.86)]"
-                    style={{
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.12em",
-                      fontSize: poemFontSize,
-                      fontWeight: 600,
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {leftColumn}
-                  </span>
-                </div>
+                {slip.number}
               </div>
-            ) : (
-              <div className="mx-auto flex aspect-[848/1489] w-full max-w-[360px] items-center justify-center rounded-[28px] border border-border/40 font-serif-sc text-sm text-foreground/45">
-                签面缺失
+
+              <div
+                className="pointer-events-none absolute flex flex-col items-center font-serif-sc text-[rgba(55,38,24,0.82)]"
+                style={{
+                  right: "8%",
+                  top: "3.8%",
+                  lineHeight: 1.15,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                <span style={{ fontSize: "3.8cqi", fontWeight: 500 }}>{slip.title}</span>
               </div>
-            )}
+
+              <div
+                className="pointer-events-none absolute flex flex-row-reverse"
+                style={{
+                  right: "7%",
+                  top: "20%",
+                  height: "78%",
+                  gap: "clamp(4px, 1.6cqi, 14px)",
+                }}
+              >
+                <span
+                  className="font-serif-sc text-[rgba(55,38,24,0.86)]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: poemFontSize,
+                    fontWeight: 600,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {rightColumn}
+                </span>
+              </div>
+
+              <div
+                className="pointer-events-none absolute flex flex-row-reverse"
+                style={{
+                  left: "7%",
+                  top: "20%",
+                  height: "78%",
+                  gap: "clamp(4px, 1.6cqi, 14px)",
+                }}
+              >
+                <span
+                  className="font-serif-sc text-[rgba(55,38,24,0.86)]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                    letterSpacing: "0.12em",
+                    fontSize: poemFontSize,
+                    fontWeight: 600,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {leftColumn}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 

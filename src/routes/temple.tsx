@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { SlipImage } from "@/components/SlipImage";
 import {
   loadHistory,
   restoreHistoryEntry,
   runHistoryMigration,
   type HistoryEntry,
 } from "@/lib/fortune-store";
-import { getSlipImageSources } from "@/lib/slip-image";
 
 export const Route = createFileRoute("/temple")({
   head: () => ({ meta: [{ title: "心庙 · 一签" }] }),
@@ -91,7 +91,6 @@ function TemplePage() {
               const savedKits = e.savedKits ? Object.values(e.savedKits) : [];
               const slipNumber = e.slip?.number;
               const slipTitle = e.slip?.title;
-              const slipImageSources = e.slip ? getSlipImageSources(e.slip) : null;
               return (
                 <div
                   key={e.id}
@@ -114,30 +113,14 @@ function TemplePage() {
                   }}
                 >
                   <div className="flex gap-4 p-4 items-stretch">
-                    <div className="shrink-0">
-                      {slipImageSources?.primary ? (
-                        <img
-                          src={slipImageSources.primary}
-                          alt="签"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(event) => {
-                            if (
-                              slipImageSources.fallback &&
-                              event.currentTarget.dataset.fallbackApplied !== "true"
-                            ) {
-                              event.currentTarget.dataset.fallbackApplied = "true";
-                              event.currentTarget.src = slipImageSources.fallback;
-                            }
-                          }}
-                          className="block h-28 w-20 rounded-md object-cover"
-                          draggable={false}
-                        />
-                      ) : (
-                        <div className="flex h-28 w-20 items-center justify-center rounded-md border border-border/40 font-serif-sc text-[10px] text-foreground/40">
-                          签面缺失
-                        </div>
-                      )}
+                    <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-md bg-[rgb(229,221,207)]">
+                      <SlipImage
+                        slip={e.slip}
+                        alt={e.slip.title ? `${e.slip.title}签面` : "签面"}
+                        loading="lazy"
+                        imgClassName="absolute inset-0 block h-full w-full object-cover"
+                        errorClassName="absolute inset-0 z-20 flex flex-col items-center justify-center px-2 text-center font-serif-sc text-[9px] leading-[1.8] tracking-[0.08em] text-[rgba(55,38,24,0.62)]"
+                      />
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-between h-28">
                       <div>
