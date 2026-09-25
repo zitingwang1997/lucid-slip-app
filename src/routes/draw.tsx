@@ -145,8 +145,13 @@ function DrawPage() {
   };
 
   useEffect(
-    () => () => {
-      if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
+    () => {
+      // Start image warming only after the main flow has reached /draw so it
+      // cannot compete with the duplicate-question server request.
+      preloadSlipImages();
+      return () => {
+        if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
+      };
     },
     [],
   );

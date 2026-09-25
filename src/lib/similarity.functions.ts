@@ -89,6 +89,8 @@ intent 为新问题的简短中文意图归纳（<=20字）。reason 为简短�
       })),
     });
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
     try {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -104,6 +106,7 @@ intent 为新问题的简短中文意图归纳（<=20字）。reason 为简短�
           ],
           response_format: { type: "json_object" },
         }),
+        signal: controller.signal,
       });
       if (!res.ok) {
         const t = await res.text();
@@ -165,5 +168,7 @@ intent 为新问题的简短中文意图归纳（<=20字）。reason 为简短�
     } catch (err) {
       console.warn("[similarity] exception", err);
       return fallback;
+    } finally {
+      clearTimeout(timeout);
     }
   });

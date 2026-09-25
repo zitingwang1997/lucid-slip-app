@@ -6,8 +6,28 @@ import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
 import { checkSameDayQuestion } from "@/lib/similarity.functions";
-import { preloadSlipImages } from "@/lib/slip-image";
 import { Mic } from "lucide-react";
+
+const SAME_DAY_CHECK_TIMEOUT_MS = 3000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("same-day check timed out")),
+      timeoutMs,
+    );
+    promise.then(
+      (value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,10 +81,6 @@ function QuestionPage() {
     const text = q.trim();
     if (!text || checking) return;
 
-    // Warm the small same-origin sign assets while the duplicate-question
-    // check and drawing ritual are running. This matters in WeChat/mainland.
-    preloadSlipImages();
-
     // Check today's previously-asked questions for semantic similarity.
     const today = getTodayHistory();
     console.log("[same-day] new question", text);
@@ -72,17 +88,20 @@ function QuestionPage() {
     if (today.length > 0) {
       setChecking(true);
       try {
-        const result = await checkSameDay({
-          data: {
-            newQuestion: text,
-            today: today.map((e) => ({
-              id: e.id,
-              question: e.question,
-              intent: e.intent,
-              category: e.category,
-            })),
-          },
-        });
+        const result = await withTimeout(
+          checkSameDay({
+            data: {
+              newQuestion: text,
+              today: today.map((e) => ({
+                id: e.id,
+                question: e.question,
+                intent: e.intent,
+                category: e.category,
+              })),
+            },
+          }),
+          SAME_DAY_CHECK_TIMEOUT_MS,
+        );
         console.log("[same-day] result", result);
         if (result.matchedId) {
           // Same-day duplicate intent — do NOT draw a new slip, do NOT clear ritual session.
