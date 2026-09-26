@@ -19,7 +19,6 @@ export const Route = createFileRoute("/draw")({
 });
 
 const HOLD_MS = 3200;
-const DRAW_WARMUP_MS = 400;
 
 type DrawRequestResult = { ok: true; value: unknown } | { ok: false; error: unknown };
 
@@ -33,12 +32,12 @@ function DrawPage() {
   const drawSlipFn = useServerFn(drawSlip);
   const [progress, setProgress] = useState(0);
   const [holding, setHolding] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const completed = useRef(false);
   const raf = useRef<number | null>(null);
   const startTs = useRef<number>(0);
   const baseProgress = useRef(0);
-  const warmupTimer = useRef<number | null>(null);
   const drawRequest = useRef<Promise<DrawRequestResult> | null>(null);
 
   const prepareDraw = () => {
@@ -69,16 +68,13 @@ function DrawPage() {
   };
 
   const endHold = () => {
-    if (warmupTimer.current != null) {
-      window.clearTimeout(warmupTimer.current);
-      warmupTimer.current = null;
-    }
     setHolding(false);
   };
 
   const complete = async () => {
     if (completed.current) return;
     completed.current = true;
+    setResolving(true);
     try {
       const question = getUserQuestion();
       if (!question || !question.trim()) {
@@ -136,6 +132,7 @@ function DrawPage() {
       console.error("[draw] request failed:", e);
       drawRequest.current = null;
       completed.current = false;
+      setResolving(false);
       setHolding(false);
       setProgress(0);
       baseProgress.current = 0;
@@ -144,17 +141,13 @@ function DrawPage() {
     }
   };
 
-  useEffect(
-    () => {
-      // Start image warming only after the main flow has reached /draw so it
-      // cannot compete with the duplicate-question server request.
-      preloadSlipImages();
-      return () => {
-        if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
-      };
-    },
-    [],
-  );
+  useEffect(() => {
+    // The user has already chosen to draw on the previous screen. Start both
+    // network tasks immediately so their wait overlaps the ritual animation.
+    preloadSlipImages();
+    void prepareDraw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const tick = (ts: number) => {
@@ -163,7 +156,8 @@ function DrawPage() {
       const p = Math.min(1, baseProgress.current + elapsed / HOLD_MS);
       setProgress(p);
       if (p >= 1) {
-        window.setTimeout(() => void complete(), 400);
+        setHolding(false);
+        void complete();
         return;
       }
       if (holding) raf.current = requestAnimationFrame(tick);
@@ -176,6 +170,11 @@ function DrawPage() {
       } catch {}
     } else {
       if (raf.current) cancelAnimationFrame(raf.current);
+      if (completed.current) {
+        baseProgress.current = 1;
+        setProgress(1);
+        return;
+      }
       baseProgress.current = progress;
       const decay = window.setInterval(() => {
         setProgress((prev) => {
@@ -196,8 +195,8 @@ function DrawPage() {
   const pct = Math.round(progress * 100);
   const guidance = error
     ? error
-    : completed.current
-      ? "签意已现"
+    : resolving
+      ? "正在取签…"
       : progress < 0.05
         ? "按住光线，静心片刻"
         : progress < 0.5
@@ -218,7 +217,7 @@ function DrawPage() {
             filter: "blur(20px)",
           }}
         />
-        {holding &&
+        {(holding || resolving) &&
           Array.from({ length: 8 }).map((_, i) => (
             <span
               key={i}
@@ -234,19 +233,18 @@ function DrawPage() {
 
         <button
           onPointerDown={() => {
+            if (completed.current || resolving) return;
             setError(null);
             preloadSlipImages();
-            if (warmupTimer.current != null) window.clearTimeout(warmupTimer.current);
-            warmupTimer.current = window.setTimeout(() => {
-              warmupTimer.current = null;
-              void prepareDraw();
-            }, DRAW_WARMUP_MS);
+            void prepareDraw();
             setHolding(true);
           }}
           onPointerUp={endHold}
           onPointerLeave={endHold}
           onPointerCancel={endHold}
           aria-label="按住求签"
+          aria-busy={resolving}
+          disabled={resolving}
           className="relative grid h-[60vh] max-h-[520px] w-full place-items-center touch-none select-none"
         >
           <div
@@ -277,7 +275,7 @@ function DrawPage() {
             />
           </div>
           <p className="mt-3 text-[10px] tracking-[0.4em] uppercase text-foreground/30">
-            Press & Hold
+            {resolving ? "Please wait" : "Press & Hold"}
           </p>
         </div>
       </main>
