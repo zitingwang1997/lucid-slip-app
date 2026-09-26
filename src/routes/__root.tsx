@@ -10,6 +10,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { identifyClarityUser, initializeClarity } from "../lib/clarity";
 import { Shell } from "../components/Shell";
 import { RitualErrorScreen } from "../components/RitualErrorScreen";
 
@@ -92,6 +93,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    initializeClarity();
+    identifyClarityUser();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

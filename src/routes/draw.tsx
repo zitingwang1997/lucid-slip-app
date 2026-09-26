@@ -12,6 +12,7 @@ import {
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
 import { getAnonymousUserId } from "@/lib/anonymous-user";
+import { trackClarityEvent } from "@/lib/clarity";
 import { checkSameDayQuestion, type SimilarityResult } from "@/lib/similarity.functions";
 import { preloadSlipImage, preloadSlipImages } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
@@ -113,6 +114,7 @@ function DrawPage() {
   const redirectToTodayGuidance = (result: SimilarityResult) => {
     if (!result.matchedId || redirected.current) return false;
     redirected.current = true;
+    trackClarityEvent("same_day_redirected");
     navigate({
       to: "/today-guidance",
       search: { id: result.matchedId, q: getUserQuestion().trim() },
@@ -218,9 +220,11 @@ function DrawPage() {
         savedKits: {},
       });
       setCurrentHistoryId(historyId);
+      trackClarityEvent("draw_completed");
       navigate({ to: "/poem" });
     } catch (e: any) {
       console.error("[draw] request failed:", e);
+      trackClarityEvent("draw_failed");
       drawRequest.current = null;
       completed.current = false;
       setResolving(false);

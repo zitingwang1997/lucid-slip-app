@@ -8,6 +8,7 @@ import { SlipImage } from "@/components/SlipImage";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
 import { getAnonymousUserId } from "@/lib/anonymous-user";
+import { trackClarityEvent } from "@/lib/clarity";
 import {
   getCurrentHistoryId,
   getHistoryEntry,
@@ -92,6 +93,7 @@ function InterpretPage() {
   const [kitsError, setKitsError] = useState<string | null>(null);
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const fetchedRef = useRef(false);
+  const interpretViewedRef = useRef(false);
 
   const interpretSlipFn = useServerFn(interpretSlip);
   const [interpretLoading, setInterpretLoading] = useState(false);
@@ -147,6 +149,7 @@ function InterpretPage() {
         persistToHistory(res);
       } catch (e: any) {
         console.error("[Workflow B fallback] failed:", e);
+        trackClarityEvent("interpret_failed");
         setInterpretError(e?.message ?? "解签失败，请稍后再试");
       } finally {
         interpretInflight.current = false;
@@ -199,6 +202,12 @@ function InterpretPage() {
     }
   }, [navigate, fallbackFetchInterpret, persistToHistory]);
 
+  useEffect(() => {
+    if (!result || interpretViewedRef.current) return;
+    interpretViewedRef.current = true;
+    trackClarityEvent("interpret_viewed");
+  }, [result]);
+
   const fetchKits = useCallback(
     async (s: SelectedSlip, r: InterpretationResult) => {
       setKitsLoading(true);
@@ -232,6 +241,7 @@ function InterpretPage() {
         writeKitsToStorage(kits);
       } catch (err) {
         console.error("[remedy kits] error", err);
+        trackClarityEvent("kit_failed");
         setKitsError(err instanceof Error ? err.message : "锦囊生成失败，请稍后再试");
       } finally {
         setKitsLoading(false);
@@ -275,6 +285,12 @@ function InterpretPage() {
       savedAt: Date.now(),
     });
     setSavedKeys((prev) => new Set(prev).add(openItem.key));
+    trackClarityEvent(`kit_saved_${openItem.key}`);
+  }
+
+  function openKit(key: KitKey, label: string) {
+    trackClarityEvent(`kit_opened_${key}`);
+    setOpenItem({ key, label });
   }
 
   if (!slip) return null;
@@ -450,7 +466,7 @@ function InterpretPage() {
             {guidanceItems.map((r, i) => (
               <button
                 key={r.key}
-                onClick={() => setOpenItem({ key: r.key, label: r.label })}
+                onClick={() => openKit(r.key, r.label)}
                 className="slow-fade-in group relative rounded-full border px-4 py-2 font-serif-sc text-[13px] tracking-[0.18em] text-ivory/90 transition-all hover:text-ivory"
                 style={{
                   borderColor: "oklch(0.74 0.13 55 / 0.32)",

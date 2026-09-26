@@ -16,6 +16,7 @@ import {
 } from "@/lib/fortune-store";
 import { interpretSlip } from "@/lib/dify.functions";
 import { getAnonymousUserId } from "@/lib/anonymous-user";
+import { trackClarityEvent } from "@/lib/clarity";
 
 export const Route = createFileRoute("/poem")({
   head: () => ({ meta: [{ title: "签诗 · 一签" }] }),
@@ -110,6 +111,7 @@ function PoemPage() {
         setInterpretStatus("success");
       } catch (e: any) {
         console.error("[Workflow B] failed:", e);
+        trackClarityEvent("interpret_failed");
         setError(e?.message ?? "解签失败，请稍后再试");
         setInterpretStatus("error");
       } finally {

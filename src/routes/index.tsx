@@ -4,6 +4,7 @@ import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
+import { trackClarityEvent } from "@/lib/clarity";
 import { Mic } from "lucide-react";
 
 function normalizeQuestionForExactMatch(value: string) {
@@ -62,6 +63,7 @@ function QuestionPage() {
   const proceed = () => {
     const text = q.trim();
     if (!text) return;
+    trackClarityEvent("question_submitted");
 
     const today = getTodayHistory();
     const normalized = normalizeQuestionForExactMatch(text);
@@ -69,6 +71,7 @@ function QuestionPage() {
       (entry) => normalizeQuestionForExactMatch(entry.question) === normalized,
     );
     if (exactMatch) {
+      trackClarityEvent("same_day_redirected");
       navigate({
         to: "/today-guidance",
         search: { id: exactMatch.id, q: text },
