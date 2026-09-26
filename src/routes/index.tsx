@@ -1,32 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef, useCallback } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
-import { checkSameDayQuestion } from "@/lib/similarity.functions";
 import { Mic } from "lucide-react";
 
-const SAME_DAY_CHECK_TIMEOUT_MS = 3000;
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timeout = window.setTimeout(
-      () => reject(new Error("same-day check timed out")),
-      timeoutMs,
-    );
-    promise.then(
-      (value) => {
-        window.clearTimeout(timeout);
-        resolve(value);
-      },
-      (error) => {
-        window.clearTimeout(timeout);
-        reject(error);
-      },
-    );
-  });
+function normalizeQuestionForExactMatch(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase()
+    .replace(/[\s\p{P}\p{S}]/gu, "");
 }
 
 export const Route = createFileRoute("/")({
@@ -44,10 +28,8 @@ export const Route = createFileRoute("/")({
 function QuestionPage() {
 
   const navigate = useNavigate();
-  const checkSameDay = useServerFn(checkSameDayQuestion);
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
-  const [checking, setChecking] = useState(false);
   const recognitionRef = useRef<any>(null);
   const mainRef = useRef<HTMLElement>(null);
   const inputAnchorRef = useRef<HTMLDivElement>(null);
@@ -77,59 +59,21 @@ function QuestionPage() {
     setListening(false);
   }, []);
 
-  const proceed = async () => {
+  const proceed = () => {
     const text = q.trim();
-    if (!text || checking) return;
+    if (!text) return;
 
-    // Check today's previously-asked questions for semantic similarity.
     const today = getTodayHistory();
-    console.log("[same-day] new question", text);
-    console.log("[same-day] today history", today);
-    if (today.length > 0) {
-      setChecking(true);
-      try {
-        const result = await withTimeout(
-          checkSameDay({
-            data: {
-              newQuestion: text,
-              today: today.map((e) => ({
-                id: e.id,
-                question: e.question,
-                intent: e.intent,
-                category: e.category,
-              })),
-            },
-          }),
-          SAME_DAY_CHECK_TIMEOUT_MS,
-        );
-        console.log("[same-day] result", result);
-        if (result.matchedId) {
-          // Same-day duplicate intent — do NOT draw a new slip, do NOT clear ritual session.
-          navigate({
-            to: "/today-guidance",
-            search: { id: result.matchedId, q: text },
-          });
-          setChecking(false);
-          return;
-        }
-        // No match: continue, and stamp intent/category on the new entry
-        // we are about to create in /draw by stashing it via a one-shot key.
-        clearRitualSession();
-        setUserQuestion(text);
-        try {
-          sessionStorage.setItem(
-            "oneslip.pendingClassification.v1",
-            JSON.stringify({ intent: result.intent, category: result.category }),
-          );
-        } catch {}
-        navigate({ to: "/draw" });
-        return;
-      } catch (err) {
-        console.warn("[index] similarity check failed", err);
-        // Fall through to normal flow on error.
-      } finally {
-        setChecking(false);
-      }
+    const normalized = normalizeQuestionForExactMatch(text);
+    const exactMatch = today.find(
+      (entry) => normalizeQuestionForExactMatch(entry.question) === normalized,
+    );
+    if (exactMatch) {
+      navigate({
+        to: "/today-guidance",
+        search: { id: exactMatch.id, q: text },
+      });
+      return;
     }
 
     clearRitualSession();
@@ -219,7 +163,7 @@ function QuestionPage() {
         <div className="relative z-10 flex justify-center" style={{ marginBottom: "8vh" }}>
           <button
             onClick={proceed}
-            disabled={checking || !q.trim()}
+            disabled={!q.trim()}
             className="rounded-full border border-foreground/12 bg-transparent px-12 py-2.5 font-serif-sc text-[13px] text-ivory/90 transition-all duration-500 hover:border-foreground/28 hover:text-ivory disabled:opacity-60"
             style={{
               letterSpacing: "0.48em",
@@ -227,7 +171,7 @@ function QuestionPage() {
               boxShadow: "0 0 24px oklch(0.75 0.04 80 / 0.04)",
             }}
           >
-            {checking ? "正在准备求签…" : "求一支签"}
+            求一支签
           </button>
         </div>
       </main>

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import {
+  getTodayHistory,
   getUserQuestion,
   pushHistory,
   setCurrentHistoryId,
@@ -10,6 +11,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
+import { checkSameDayQuestion, type SimilarityResult } from "@/lib/similarity.functions";
 import { preloadSlipImage, preloadSlipImages } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/draw")({
 });
 
 const HOLD_MS = 3200;
+const SAME_DAY_CHECK_TIMEOUT_MS = 3000;
 
 type DrawRequestResult = { ok: true; value: unknown } | { ok: false; error: unknown };
 
@@ -27,18 +30,53 @@ function isTransportError(error: unknown) {
   return /load failed|failed to fetch|network|connection/i.test(message);
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("same-day check timed out")),
+      timeoutMs,
+    );
+    promise.then(
+      (value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
+
+function fallbackSameDayResult(question: string, reason: string): SimilarityResult {
+  return {
+    matchedId: null,
+    intent: question,
+    category: "other",
+    confidence: 0,
+    reason,
+  };
+}
+
 function DrawPage() {
   const navigate = useNavigate();
   const drawSlipFn = useServerFn(drawSlip);
+  const checkSameDay = useServerFn(checkSameDayQuestion);
   const [progress, setProgress] = useState(0);
   const [holding, setHolding] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [sameDayPending, setSameDayPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const completed = useRef(false);
   const raf = useRef<number | null>(null);
   const startTs = useRef<number>(0);
   const baseProgress = useRef(0);
+  const holdingRef = useRef(false);
+  const redirected = useRef(false);
   const drawRequest = useRef<Promise<DrawRequestResult> | null>(null);
+  const sameDayRequest = useRef<Promise<SimilarityResult> | null>(null);
+  const sameDayResult = useRef<SimilarityResult | null>(null);
 
   const prepareDraw = () => {
     if (drawRequest.current) return drawRequest.current;
@@ -55,9 +93,7 @@ function DrawPage() {
         return run();
       })
       .then((value) => {
-        const maybeSlip = ((value as { slip?: unknown } | null)?.slip ?? value) as
-          | SelectedSlip
-          | undefined;
+        const maybeSlip = ((value as { slip?: unknown } | null)?.slip ?? value) as SelectedSlip;
         if (maybeSlip && typeof maybeSlip === "object" && !Array.isArray(maybeSlip)) {
           preloadSlipImage(maybeSlip);
         }
@@ -67,8 +103,66 @@ function DrawPage() {
     return drawRequest.current;
   };
 
+  const redirectToTodayGuidance = (result: SimilarityResult) => {
+    if (!result.matchedId || redirected.current) return false;
+    redirected.current = true;
+    navigate({
+      to: "/today-guidance",
+      search: { id: result.matchedId, q: getUserQuestion().trim() },
+    });
+    return true;
+  };
+
+  const prepareSameDayCheck = () => {
+    if (sameDayRequest.current) return sameDayRequest.current;
+
+    const question = getUserQuestion().trim();
+    const fallback = fallbackSameDayResult(question, "fallback");
+    const today = getTodayHistory();
+    if (!question || today.length === 0) {
+      sameDayResult.current = fallback;
+      sameDayRequest.current = Promise.resolve(fallback);
+      return sameDayRequest.current;
+    }
+
+    setSameDayPending(true);
+    sameDayRequest.current = withTimeout(
+      checkSameDay({
+        data: {
+          newQuestion: question,
+          today: today.map((entry) => ({
+            id: entry.id,
+            question: entry.question,
+            intent: entry.intent,
+            category: entry.category,
+          })),
+        },
+      }),
+      SAME_DAY_CHECK_TIMEOUT_MS,
+    )
+      .catch((checkError) => {
+        console.warn("[draw] same-day check skipped:", checkError);
+        return fallbackSameDayResult(question, "timeout-or-error");
+      })
+      .then((result) => {
+        sameDayResult.current = result;
+        setSameDayPending(false);
+        if (result.matchedId && !holdingRef.current && !completed.current) {
+          redirectToTodayGuidance(result);
+        }
+        return result;
+      });
+
+    return sameDayRequest.current;
+  };
+
   const endHold = () => {
+    holdingRef.current = false;
     setHolding(false);
+    const result = sameDayResult.current;
+    if (!completed.current && result?.matchedId) {
+      redirectToTodayGuidance(result);
+    }
   };
 
   const complete = async () => {
@@ -81,6 +175,9 @@ function DrawPage() {
         navigate({ to: "/" });
         return;
       }
+      const checkResult = await prepareSameDayCheck();
+      if (redirectToTodayGuidance(checkResult)) return;
+
       const pendingDraw = prepareDraw();
       if (!pendingDraw) {
         navigate({ to: "/" });
@@ -104,24 +201,11 @@ function DrawPage() {
       preloadSlipImage(slip);
       setSelectedSlip(slip);
       const historyId = randomId();
-      let intent: string | undefined;
-      let category: string | undefined;
-      try {
-        const raw = sessionStorage.getItem("oneslip.pendingClassification.v1");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === "object") {
-            intent = typeof parsed.intent === "string" ? parsed.intent : undefined;
-            category = typeof parsed.category === "string" ? parsed.category : undefined;
-          }
-          sessionStorage.removeItem("oneslip.pendingClassification.v1");
-        }
-      } catch {}
       pushHistory({
         id: historyId,
         question: question.trim(),
-        intent,
-        category,
+        intent: checkResult.intent,
+        category: checkResult.category,
         slip,
         createdAt: Date.now(),
         savedKits: {},
@@ -142,10 +226,12 @@ function DrawPage() {
   };
 
   useEffect(() => {
-    // The user has already chosen to draw on the previous screen. Start both
-    // network tasks immediately so their wait overlaps the ritual animation.
-    preloadSlipImages();
+    // Start both server requests immediately. Delay low-priority image warming
+    // briefly so it does not compete with the two control-plane requests.
+    void prepareSameDayCheck();
     void prepareDraw();
+    const imageWarmup = window.setTimeout(preloadSlipImages, 250);
+    return () => window.clearTimeout(imageWarmup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -156,6 +242,7 @@ function DrawPage() {
       const p = Math.min(1, baseProgress.current + elapsed / HOLD_MS);
       setProgress(p);
       if (p >= 1) {
+        holdingRef.current = false;
         setHolding(false);
         void complete();
         return;
@@ -163,6 +250,7 @@ function DrawPage() {
       if (holding) raf.current = requestAnimationFrame(tick);
     };
     if (holding) {
+      holdingRef.current = true;
       startTs.current = 0;
       raf.current = requestAnimationFrame(tick);
       try {
@@ -196,7 +284,9 @@ function DrawPage() {
   const guidance = error
     ? error
     : resolving
-      ? "正在取签…"
+      ? sameDayPending
+        ? "正在确认今日心问…"
+        : "正在取签…"
       : progress < 0.05
         ? "按住光线，静心片刻"
         : progress < 0.5
@@ -235,8 +325,8 @@ function DrawPage() {
           onPointerDown={() => {
             if (completed.current || resolving) return;
             setError(null);
-            preloadSlipImages();
             void prepareDraw();
+            holdingRef.current = true;
             setHolding(true);
           }}
           onPointerUp={endHold}
