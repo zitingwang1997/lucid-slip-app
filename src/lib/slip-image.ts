@@ -7,16 +7,6 @@ import xiaShihuaiAUrl from "@/assets/qian-images/xia-shihuai-a.webp";
 import xiaShihuaiBUrl from "@/assets/qian-images/xia-shihuai-b.webp";
 import zhongpingPojuUrl from "@/assets/qian-images/zhongping-poju.webp";
 
-export const SLIP_IMAGE_URLS = [
-  shangjiMingxinAUrl,
-  shangjiMingxinBUrl,
-  jiJingxinUrl,
-  zhongpingPojuUrl,
-  xiaShihuaiAUrl,
-  xiaShihuaiBUrl,
-  pingWukongUrl,
-] as const;
-
 const LOCAL_IMAGE_BY_QIAN_NUMBER: Record<number, string> = {
   1: shangjiMingxinAUrl,
   2: shangjiMingxinBUrl,
@@ -55,20 +45,6 @@ const LOCAL_IMAGE_BY_QIAN_NUMBER: Record<number, string> = {
 
 const preloadCache = new Map<string, HTMLImageElement>();
 
-/** Start downloading all seven small sign faces during the drawing ritual. */
-export function preloadSlipImages() {
-  if (typeof window === "undefined") return;
-
-  for (const url of SLIP_IMAGE_URLS) {
-    if (preloadCache.has(url)) continue;
-    const image = new Image();
-    image.decoding = "async";
-    image.fetchPriority = "low";
-    image.src = url;
-    preloadCache.set(url, image);
-  }
-}
-
 /** Download only the selected sign face once the draw result is known. */
 export function preloadSlipImage(slip: SelectedSlip) {
   if (typeof window === "undefined") return;
@@ -89,12 +65,63 @@ export function preloadSlipImage(slip: SelectedSlip) {
   preloadCache.set(primary, image);
 }
 
+function parseChineseQianNumber(value: string): number | null {
+  const normalized = value
+    .trim()
+    .replace(/^第/, "")
+    .replace(/签$/, "")
+    .replace(/\s+/g, "")
+    .replace(/[壹一]/g, "一")
+    .replace(/[贰貳二]/g, "二")
+    .replace(/[叁參三]/g, "三")
+    .replace(/[肆四]/g, "四")
+    .replace(/[伍五]/g, "五")
+    .replace(/[陆陸六]/g, "六")
+    .replace(/[柒七]/g, "七")
+    .replace(/[捌八]/g, "八")
+    .replace(/[玖九]/g, "九")
+    .replace(/[拾十]/g, "十");
+
+  const arabic = normalized.match(/^(\d{1,2})$/);
+  if (arabic) {
+    const parsed = Number(arabic[1]);
+    return parsed >= 1 && parsed <= 33 ? parsed : null;
+  }
+
+  const digitValues: Record<string, number> = {
+    一: 1,
+    二: 2,
+    三: 3,
+    四: 4,
+    五: 5,
+    六: 6,
+    七: 7,
+    八: 8,
+    九: 9,
+  };
+  let parsed: number | null = null;
+  if (normalized === "十") parsed = 10;
+  else if (/^十[一二三四五六七八九]$/.test(normalized)) {
+    parsed = 10 + digitValues[normalized[1]];
+  } else if (/^[二三]十$/.test(normalized)) {
+    parsed = digitValues[normalized[0]] * 10;
+  } else if (/^[二三]十[一二三四五六七八九]$/.test(normalized)) {
+    parsed = digitValues[normalized[0]] * 10 + digitValues[normalized[2]];
+  } else if (/^[一二三四五六七八九]$/.test(normalized)) {
+    parsed = digitValues[normalized];
+  }
+
+  return parsed != null && parsed >= 1 && parsed <= 33 ? parsed : null;
+}
+
 function getQianNumber(slip: SelectedSlip): number | null {
   const imageMatch = slip.image_url?.match(/qian_(\d+)\.(?:png|webp)(?:$|[?#])/i);
   if (imageMatch) return Number(imageMatch[1]);
 
   const id = Number(slip.id);
-  return Number.isInteger(id) && id >= 1 && id <= 33 ? id : null;
+  if (Number.isInteger(id) && id >= 1 && id <= 33) return id;
+
+  return parseChineseQianNumber(String(slip.number ?? ""));
 }
 
 export interface SlipImageSources {

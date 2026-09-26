@@ -14,7 +14,7 @@ import { drawSlip } from "@/lib/dify.functions";
 import { getAnonymousUserId } from "@/lib/anonymous-user";
 import { trackClarityEvent } from "@/lib/clarity";
 import { checkSameDayQuestion, type SimilarityResult } from "@/lib/similarity.functions";
-import { preloadSlipImage, preloadSlipImages } from "@/lib/slip-image";
+import { preloadSlipImage } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
 
 export const Route = createFileRoute("/draw")({
@@ -237,12 +237,10 @@ function DrawPage() {
   };
 
   useEffect(() => {
-    // Start both server requests immediately. Delay low-priority image warming
-    // briefly so it does not compete with the two control-plane requests.
+    // Start both server requests immediately. Once Dify returns, prepareDraw
+    // preloads only the selected sign face at high priority.
     void prepareSameDayCheck();
     void prepareDraw();
-    const imageWarmup = window.setTimeout(preloadSlipImages, 250);
-    return () => window.clearTimeout(imageWarmup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

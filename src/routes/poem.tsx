@@ -43,6 +43,7 @@ function PoemPage() {
   const interpretSlipFn = useServerFn(interpretSlip);
   const [slip, setSlip] = useState<SelectedSlip | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [imageRetrying, setImageRetrying] = useState(false);
   const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [awaitingInterpret, setAwaitingInterpret] = useState(false);
@@ -151,6 +152,7 @@ function PoemPage() {
 
     setSlip(s);
     setRevealed(false);
+    setImageRetrying(false);
 
     const cached = getInterpretCacheV2();
     console.log("[POEM] interpret cache:", cached);
@@ -362,7 +364,17 @@ function PoemPage() {
               alt={slip.title ? `${slip.title}签面` : "签面"}
               fetchPriority="high"
               readyDelayMs={380}
-              onReady={() => setRevealed(true)}
+              watchdogMs={3000}
+              onReady={() => {
+                setImageRetrying(false);
+                setRevealed(true);
+                trackClarityEvent("slip_image_ready");
+              }}
+              onRetry={() => {
+                setImageRetrying(true);
+                trackClarityEvent("slip_image_retry");
+              }}
+              onFailure={() => trackClarityEvent("slip_image_failed")}
               imgClassName="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
               imgStyle={{
                 WebkitTouchCallout: "none",
@@ -375,7 +387,7 @@ function PoemPage() {
 
             {!revealed && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif-sc text-xs tracking-[0.35em] text-[rgba(55,38,24,0.38)]">
-                签 面 显 现 中
+                {imageRetrying ? "网络稍缓 · 正在重试" : "签 面 显 现 中"}
               </div>
             )}
 

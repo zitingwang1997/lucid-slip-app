@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { SelectedSlip } from "@/lib/fortune-store";
 import { getSlipImageSources } from "@/lib/slip-image";
 
@@ -13,7 +13,10 @@ interface SlipImageProps {
   loading?: "eager" | "lazy";
   fetchPriority?: "high" | "low" | "auto";
   readyDelayMs?: number;
+  watchdogMs?: number;
   onReady?: () => void;
+  onRetry?: () => void;
+  onFailure?: () => void;
 }
 
 const DECODE_GRACE_MS = 400;
@@ -26,6 +29,11 @@ function nextFrame() {
   return new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
 }
 
+function withCacheBust(url: string) {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}retry=${Date.now()}`;
+}
+
 export function SlipImage({
   slip,
   alt,
@@ -35,27 +43,41 @@ export function SlipImage({
   loading = "eager",
   fetchPriority = "auto",
   readyDelayMs = 0,
+  watchdogMs = 0,
   onReady,
+  onRetry,
+  onFailure,
 }: SlipImageProps) {
   const sources = getSlipImageSources(slip);
   const [source, setSource] = useState(sources.primary);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ImageStatus>(sources.primary ? "loading" : "failed");
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const readyRef = useRef(false);
+  const failureReportedRef = useRef(false);
 
   useEffect(() => {
     setSource(sources.primary);
     setUsingFallback(false);
+    setAttempt(0);
     setStatus(sources.primary ? "loading" : "failed");
+    readyRef.current = false;
+    failureReportedRef.current = false;
   }, [sources.primary, sources.fallback]);
 
   const handleLoad = async (image: HTMLImageElement) => {
-    const loadedSrc = image.currentSrc;
+    if (readyRef.current || image.naturalWidth <= 0) return;
+    readyRef.current = true;
 
     // WebKit webviews can leave decode() pending. Give decoding a short grace
     // period, then show the already-loaded image instead of blocking the UI.
     await Promise.race([image.decode().catch(() => undefined), wait(DECODE_GRACE_MS)]);
 
-    if (!image.isConnected || image.currentSrc !== loadedSrc) return;
+    if (!image.isConnected || imageRef.current !== image || image.naturalWidth <= 0) {
+      readyRef.current = false;
+      return;
+    }
     setStatus("loaded");
 
     // React and WeChat's WebView can commit the parent state before the image
@@ -64,33 +86,82 @@ export function SlipImage({
     await nextFrame();
     await nextFrame();
     if (readyDelayMs > 0) await wait(readyDelayMs);
-    if (!image.isConnected || image.currentSrc !== loadedSrc) return;
+    if (!image.isConnected || imageRef.current !== image) return;
     onReady?.();
   };
 
+  const reportFailure = () => {
+    setStatus("failed");
+    if (failureReportedRef.current) return;
+    failureReportedRef.current = true;
+    onFailure?.();
+  };
+
+  const retryPrimary = (automatic: boolean) => {
+    if (!sources.primary) {
+      reportFailure();
+      return;
+    }
+    readyRef.current = false;
+    failureReportedRef.current = false;
+    setUsingFallback(false);
+    setAttempt(automatic ? 1 : 0);
+    setStatus("loading");
+    setSource(withCacheBust(sources.primary));
+    onRetry?.();
+  };
+
   const handleError = () => {
+    if (watchdogMs > 0) {
+      if (attempt === 0) retryPrimary(true);
+      else reportFailure();
+      return;
+    }
     if (!usingFallback && sources.fallback && sources.fallback !== source) {
       setUsingFallback(true);
       setStatus("loading");
       setSource(sources.fallback);
       return;
     }
-    setStatus("failed");
+    reportFailure();
   };
 
   const retry = () => {
-    const retrySource = sources.primary || sources.fallback;
-    if (!retrySource) return;
-    const separator = retrySource.includes("?") ? "&" : "?";
-    setUsingFallback(false);
-    setStatus("loading");
-    setSource(`${retrySource}${separator}retry=${Date.now()}`);
+    retryPrimary(false);
   };
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image || status !== "loading") return;
+
+    // Cached images can finish before some Android/WeChat WebViews deliver
+    // React's onLoad callback. Inspect the element directly as a second path.
+    if (image.complete && image.naturalWidth > 0) {
+      void handleLoad(image);
+      return;
+    }
+
+    if (watchdogMs <= 0) return;
+    const timeout = window.setTimeout(() => {
+      const currentImage = imageRef.current;
+      if (currentImage?.complete && currentImage.naturalWidth > 0) {
+        void handleLoad(currentImage);
+        return;
+      }
+      if (attempt === 0) retryPrimary(true);
+      else reportFailure();
+    }, watchdogMs);
+
+    return () => window.clearTimeout(timeout);
+    // Callback props intentionally do not restart an in-flight image watchdog.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, status, attempt, watchdogMs]);
 
   return (
     <>
       {source && (
         <img
+          ref={imageRef}
           src={source}
           alt={alt}
           loading={loading}
