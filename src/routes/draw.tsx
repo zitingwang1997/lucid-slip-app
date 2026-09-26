@@ -11,6 +11,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { drawSlip } from "@/lib/dify.functions";
+import { getAnonymousUserId } from "@/lib/anonymous-user";
 import { checkSameDayQuestion, type SimilarityResult } from "@/lib/similarity.functions";
 import { preloadSlipImage, preloadSlipImages } from "@/lib/slip-image";
 import { randomId } from "@/lib/utils";
@@ -84,7 +85,13 @@ function DrawPage() {
     const question = getUserQuestion().trim();
     if (!question) return null;
 
-    const run = () => drawSlipFn({ data: { user_question: question } });
+    const run = () =>
+      drawSlipFn({
+        data: {
+          user_question: question,
+          anonymous_user_id: getAnonymousUserId(),
+        },
+      });
     drawRequest.current = run()
       .catch(async (requestError) => {
         if (!isTransportError(requestError)) throw requestError;

@@ -15,6 +15,7 @@ import {
   type SelectedSlip,
 } from "@/lib/fortune-store";
 import { interpretSlip } from "@/lib/dify.functions";
+import { getAnonymousUserId } from "@/lib/anonymous-user";
 
 export const Route = createFileRoute("/poem")({
   head: () => ({ meta: [{ title: "签诗 · 一签" }] }),
@@ -74,6 +75,7 @@ function PoemPage() {
         const payload = {
           user_question: q,
           qian_data: JSON.stringify(buildQianData(s)),
+          anonymous_user_id: getAnonymousUserId(),
         };
 
         console.log("[PRELOAD] payload to Workflow B:", payload);

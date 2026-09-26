@@ -7,6 +7,7 @@ import { SlipImage } from "@/components/SlipImage";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { getRemedyKits, interpretSlip } from "@/lib/dify.functions";
+import { getAnonymousUserId } from "@/lib/anonymous-user";
 import {
   getCurrentHistoryId,
   getHistoryEntry,
@@ -130,6 +131,7 @@ function InterpretPage() {
               allusion: s.allusion,
               meaning_seed: (s as any).meaning_seed ?? s.keywords,
             }),
+            anonymous_user_id: getAnonymousUserId(),
           },
         });
         const hasContent = res?.xiang_content || res?.yi_content || res?.xing_content;
@@ -222,6 +224,7 @@ function InterpretPage() {
             user_question: question,
             qian_data: JSON.stringify(qianData),
             interpretation: JSON.stringify(interpretationPayload),
+            anonymous_user_id: getAnonymousUserId(),
           },
         });
         const kits = (res?.kits ?? {}) as KitCache;

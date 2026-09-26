@@ -16,7 +16,18 @@ function workflowUserMessage(label: string) {
   return "服务暂时不可用，请稍后重试";
 }
 
-async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>, label: string) {
+function normalizeDifyUserId(value: unknown) {
+  if (typeof value !== "string") return "oneslip-anonymous";
+  const normalized = value.trim().slice(0, 100);
+  return normalized || "oneslip-anonymous";
+}
+
+async function callDifyWorkflow(
+  apiKey: string,
+  inputs: Record<string, unknown>,
+  label: string,
+  anonymousUserId: string,
+) {
   const baseUrl = (process.env.DIFY_BASE_URL ?? "https://api.dify.ai/v1").replace(/\/$/, "");
   console.log(`[Dify ${label}] request inputs:`, JSON.stringify(inputs).slice(0, 500));
   const controller = new AbortController();
@@ -36,7 +47,7 @@ async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>,
       body: JSON.stringify({
         inputs,
         response_mode: "blocking",
-        user: "oneslip-web",
+        user: normalizeDifyUserId(anonymousUserId),
       }),
       signal: controller.signal,
     });
@@ -104,11 +115,16 @@ async function callDifyWorkflow(apiKey: string, inputs: Record<string, unknown>,
 
 // Workflow A: draw a random fortune slip
 export const drawSlip = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question?: string }) => data ?? {})
+  .inputValidator((data: { user_question?: string; anonymous_user_id: string }) => data ?? {})
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_DRAW_API_KEY;
     if (!apiKey) throw new Error("DIFY_DRAW_API_KEY missing");
-    const outputs = await callDifyWorkflow(apiKey, { user_question: data?.user_question ?? "" }, "draw");
+    const outputs = await callDifyWorkflow(
+      apiKey,
+      { user_question: data?.user_question ?? "" },
+      "draw",
+      data?.anonymous_user_id,
+    );
     const slip = outputs.slip ?? outputs.qian ?? outputs;
     const user_question = outputs.user_question ?? data?.user_question ?? "";
     return { user_question, slip };
@@ -116,7 +132,7 @@ export const drawSlip = createServerFn({ method: "POST" })
 
 // Workflow B: interpret a selected slip
 export const interpretSlip = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question: string; qian_data: string }) => data)
+  .inputValidator((data: { user_question: string; qian_data: string; anonymous_user_id: string }) => data)
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_INTERPRET_API_KEY;
     if (!apiKey) throw new Error("DIFY_INTERPRET_API_KEY missing");
@@ -127,6 +143,7 @@ export const interpretSlip = createServerFn({ method: "POST" })
         qian_data: typeof data.qian_data === "string" ? data.qian_data : JSON.stringify(data.qian_data ?? {}),
       },
       "interpret",
+      data.anonymous_user_id,
     );
     const o: any = outputs ?? {};
 
@@ -265,7 +282,14 @@ function normalizeKit(raw: any): RemedyKit {
 }
 
 export const getRemedyKits = createServerFn({ method: "POST" })
-  .inputValidator((data: { user_question: string; qian_data: string; interpretation: string }) => data)
+  .inputValidator(
+    (data: {
+      user_question: string;
+      qian_data: string;
+      interpretation: string;
+      anonymous_user_id: string;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     const apiKey = process.env.DIFY_REMEDY_API_KEY;
     if (!apiKey) throw new Error("DIFY_REMEDY_API_KEY missing");
@@ -283,6 +307,7 @@ export const getRemedyKits = createServerFn({ method: "POST" })
               typeof data.interpretation === "string" ? data.interpretation : JSON.stringify(data.interpretation ?? {}),
           },
           "remedy",
+          data.anonymous_user_id,
         );
         break;
       } catch (err) {
