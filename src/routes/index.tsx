@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { InputAmoebaAura } from "@/components/InputAmoebaAura";
 import { ParticleSplashIntro } from "@/components/ParticleSplashIntro";
 import { Shell } from "@/components/Shell";
 import { clearRitualSession, getTodayHistory, setUserQuestion } from "@/lib/fortune-store";
 import { trackClarityEvent } from "@/lib/clarity";
-import { Mic } from "lucide-react";
 
 function normalizeQuestionForExactMatch(value: string) {
   return value
@@ -30,35 +29,15 @@ function QuestionPage() {
 
   const navigate = useNavigate();
   const [q, setQ] = useState("");
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
   const mainRef = useRef<HTMLElement>(null);
   const inputAnchorRef = useRef<HTMLDivElement>(null);
 
-  const startVoice = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const rec = new SpeechRecognition();
-    rec.lang = "zh-CN";
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setQ((prev) => (prev ? prev + " " + transcript : transcript));
-      setListening(false);
-    };
-    rec.onerror = () => setListening(false);
-    rec.onend = () => setListening(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setListening(true);
-  }, []);
-
-  const stopVoice = useCallback(() => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  }, []);
+  const resizeQuestionInput = (element: HTMLTextAreaElement) => {
+    const maxHeight = 114;
+    element.style.height = "auto";
+    element.style.height = `${Math.min(element.scrollHeight, maxHeight)}px`;
+    element.style.overflowY = element.scrollHeight > maxHeight ? "auto" : "hidden";
+  };
 
   const proceed = () => {
     const text = q.trim();
@@ -119,15 +98,23 @@ function QuestionPage() {
         {/* 中区 */}
         <div ref={inputAnchorRef} className="relative flex w-full flex-col items-center text-center">
           <div className="relative z-10 w-[70%]">
-            <input
+            <textarea
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                resizeQuestionInput(e.currentTarget);
+              }}
               placeholder="输入你的困惑"
-              className="ritual-question-input w-full border-0 bg-transparent text-center font-serif-sc text-[16px] focus:outline-none"
+              rows={1}
+              className="ritual-question-input relative left-1/2 block w-[122%] -translate-x-1/2 resize-none overflow-y-hidden border-0 bg-transparent text-center font-serif-sc text-[16px] focus:outline-none sm:w-full"
               style={{
                 fontSize: "16px",
                 letterSpacing: "0.12em",
-                padding: "8px 0",
+                lineHeight: 1.65,
+                height: "34px",
+                minHeight: "34px",
+                maxHeight: "114px",
+                padding: "4px 0",
                 color: "rgba(255, 255, 255, 0.94)",
                 WebkitTextFillColor: "rgba(255, 255, 255, 0.94)",
                 mixBlendMode: "normal",
@@ -141,24 +128,7 @@ function QuestionPage() {
                 background: "linear-gradient(to right, transparent, oklch(0.75 0.04 80 / 0.18), transparent)",
               }}
             />
-            <div className="mt-6 flex flex-col items-center gap-1.5">
-              <button
-                onClick={listening ? stopVoice : startVoice}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 transition-colors hover:border-foreground/25"
-                style={{
-                  boxShadow: listening ? "0 0 14px oklch(0.75 0.04 80 / 0.15)" : undefined,
-                  animation: listening ? "breathe 2s ease-in-out infinite" : undefined,
-                }}
-                aria-label={listening ? "停止语音输入" : "语音输入"}
-              >
-                <Mic size={13} className={listening ? "text-foreground/70" : "text-foreground/30"} strokeWidth={1.25} />
-              </button>
-              {listening && (
-                <span className="font-serif-sc text-[9px] text-foreground/40" style={{ letterSpacing: "0.25em" }}>
-                  聆听中…
-                </span>
-              )}
-            </div>
+            <div aria-hidden className="mt-6 h-7" />
           </div>
         </div>
 
