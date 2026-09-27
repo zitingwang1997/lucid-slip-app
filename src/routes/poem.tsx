@@ -47,6 +47,7 @@ function PoemPage() {
   const [interpretStatus, setInterpretStatus] = useState<InterpretStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [awaitingInterpret, setAwaitingInterpret] = useState(false);
+  const [holdHintVisible, setHoldHintVisible] = useState(false);
   const inflight = useRef(false);
   const holdRaf = useRef<number | null>(null);
   const holdStart = useRef<number>(0);
@@ -184,6 +185,16 @@ function PoemPage() {
       navigate({ to: "/interpret" });
     }
   }, [awaitingInterpret, interpretStatus, navigate]);
+
+  // Hold-hint should only draw the eye once the poem lines have nearly finished
+  // revealing (right column finishes ~2.6s in, left column ~4.2s in) — never at
+  // the moment the slip image first appears.
+  useEffect(() => {
+    if (!revealed) return;
+    setHoldHintVisible(false);
+    const timer = setTimeout(() => setHoldHintVisible(true), 3800);
+    return () => clearTimeout(timer);
+  }, [revealed]);
 
   const stopHoldRaf = () => {
     if (holdRaf.current != null) {
@@ -481,24 +492,203 @@ function PoemPage() {
                 className="poem-hold-glow__core absolute left-1/2 top-1/2 h-24 w-24 rounded-full"
               />
             </div>
+
+            {/* Hold hint — anchored inside the card, lower-middle, over the touch
+                target itself. Only appears once the poem lines have nearly finished
+                revealing (see holdHintVisible timer above), and only the glow behind
+                the text breathes — the text itself never moves. Styles are scoped
+                to this file (see <style> below) so they can't collide with anyone
+                else's edits to shared stylesheets. */}
+            {revealed && holdHintVisible && (
+              <div className="hold-hint pointer-events-none absolute inset-x-0 bottom-[8%] flex justify-center holdHintAppear">
+                {!awaitingInterpret && (
+                  <>
+                    <span className="hold-hint__outer absolute left-1/2 top-1/2" />
+                    <span className="hold-hint__mid absolute left-1/2 top-1/2" />
+                    <span className="hold-hint__core absolute left-1/2 top-1/2" />
+                  </>
+                )}
+                <div
+                  className="hold-hint__text relative flex flex-col items-center gap-0.5 font-serif-sc font-medium text-[14px] leading-[1.5] tracking-[0.15em] text-[rgba(55,38,24,0.72)]"
+                  style={{
+                    opacity: awaitingInterpret ? 0.7 : 1,
+                    transition: "opacity 600ms ease",
+                  }}
+                >
+                  <span>{awaitingInterpret ? "签 意 解析 中" : "长按签面"}</span>
+                  <span>{awaitingInterpret ? "静 候 片 刻" : "查看解析"}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {revealed && (
-          <div className="mt-8 flex w-full max-w-[340px] flex-col items-center gap-2 slow-fade-in">
-            <div
-              className="flex flex-col items-center font-serif-sc text-[12px] leading-[1.9] tracking-[0.5em] text-foreground/40"
-              style={{
-                opacity: awaitingInterpret ? 0.7 : 1,
-                transition: "opacity 600ms ease",
-              }}
-            >
-              <span>{awaitingInterpret ? "签 意 解析 中" : "长 按 签 文"}</span>
-              <span>{awaitingInterpret ? "静 候 片 刻" : "静 观 其 意"}</span>
-            </div>
-          </div>
-        )}
       </main>
+
+      {/*
+        Scoped styles for the hold-hint breathing glow (poem page only).
+        Three layered radial blobs standing in for the homepage's
+        InputAmoebaAura canvas aura (same warm gold palette as
+        src/lib/particles.ts AURA_GOLD, same "breathe" cadence) — reimplemented
+        here as lightweight CSS instead of importing the full-viewport canvas
+        component, since that one is hard-wired to window size / screen center.
+        Kept entirely inside this file so it can't collide with anyone else's
+        edits to shared stylesheets or the InputAmoebaAura component itself.
+      */}
+      <style>{`
+      .holdHintAppear {
+  animation: holdHintAppear 500ms ease-out both;
+}
+
+@keyframes holdHintAppear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+        .hold-hint__outer,
+        .hold-hint__mid,
+        .hold-hint__core {
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        /* Outermost ring — the one allowed to swell up to ~80% of the card's
+           own width (cqi is relative to the card's inline size). */
+        .hold-hint__outer {
+          width: 80cqi;
+          height: 80cqi;
+          max-width: 450px;
+          max-height: 450px;
+          background: radial-gradient(
+            circle,
+            rgba(185, 140, 65, 0.22) 0%,
+            rgba(168, 128, 60, 0.16) 55%,
+            rgba(140, 100, 45, 0.21) 82%,
+            rgba(125, 90, 38, 0.15) 100%
+          );
+          filter: blur(18px);
+          animation:
+            holdHintOuterBreathe 3.4s cubic-bezier(0.33, 0, 0.2, 1) 0s infinite backwards,
+            holdHintOuterWobble 5.6s ease-in-out 1.4s infinite backwards;
+        }
+
+        .hold-hint__mid {
+          width: 50cqi;
+          height: 50cqi;
+          max-width: 320px;
+          max-height: 320px;
+          background: radial-gradient(
+            circle,
+            rgba(196, 148, 70, 0.3) 0%,
+            rgba(178, 133, 60, 0.26) 60%,
+            rgba(150, 107, 48, 0.17) 85%,
+            rgba(125, 90, 38, 0) 100%
+          );
+          filter: blur(12px);
+          animation: holdHintMidBreathe 2.9s cubic-bezier(0.33, 0, 0.2, 1) 0s infinite backwards;
+        }
+
+        .hold-hint__core {
+          width: 28cqi;
+          height: 28cqi;
+          max-width: 200px;
+          max-height: 200px;
+          background: radial-gradient(
+            circle,
+            rgba(210, 164, 85, 0.45) 0%,
+            rgba(196, 152, 75, 0.33) 55%,
+            rgba(165, 119, 55, 0.19) 82%,
+            rgba(125, 90, 38, 0.11) 100%
+          );
+          filter: blur(6px);
+          animation: holdHintCoreBreathe 3.7s cubic-bezier(0.33, 0, 0.2, 1) 0s infinite backwards;
+        }
+
+        /* Asymmetric rise / brief hold / slower fall — like an actual breath,
+           not a metronome. Shape (border-radius) is animated separately below
+           on its own, unrelated period, so the wobble and the pulse drift
+           in and out of phase with each other instead of always landing on
+           the same beat. */
+        @keyframes holdHintOuterBreathe {
+          0% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(0.5);
+          }
+          40% {
+            opacity: 0.26;
+            transform: translate3d(-50%, -50%, 0) scale(0.94);
+          }
+          54% {
+            opacity: 0.28;
+            transform: translate3d(-50%, -50%, 0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(0.5);
+          }
+        }
+
+        @keyframes holdHintOuterWobble {
+          0%,
+          100% {
+            border-radius: 46% 54% 61% 39% / 49% 42% 58% 51%;
+          }
+          50% {
+            border-radius: 58% 42% 39% 61% / 41% 57% 43% 59%;
+          }
+        }
+
+        @keyframes holdHintMidBreathe {
+          0% {
+            opacity: 0.05;
+            transform: translate3d(-50%, -50%, 0) scale(0.6);
+          }
+          42% {
+            opacity: 0.42;
+            transform: translate3d(-50%, -50%, 0) scale(0.96);
+          }
+          58% {
+            opacity: 0.45;
+            transform: translate3d(-50%, -50%, 0) scale(1);
+          }
+          100% {
+            opacity: 0.05;
+            transform: translate3d(-50%, -50%, 0) scale(0.6);
+          }
+        }
+
+        @keyframes holdHintCoreBreathe {
+          0% {
+            opacity: 0.15;
+            transform: translate3d(-50%, -50%, 0) scale(0.78);
+          }
+          38% {
+            opacity: 0.7;
+            transform: translate3d(-50%, -50%, 0) scale(1.02);
+          }
+          52% {
+            opacity: 0.75;
+            transform: translate3d(-50%, -50%, 0) scale(1.05);
+          }
+          100% {
+            opacity: 0.15;
+            transform: translate3d(-50%, -50%, 0) scale(0.78);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hold-hint__outer,
+          .hold-hint__mid,
+          .hold-hint__core {
+            animation: none;
+            opacity: 0.25;
+            transform: translate3d(-50%, -50%, 0) scale(1);
+            border-radius: 50%;
+          }
+        }
+      `}</style>
     </Shell>
   );
 }
