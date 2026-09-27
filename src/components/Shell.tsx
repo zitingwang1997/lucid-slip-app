@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Ambient } from "./Ambient";
+import { AmbientAudioToggle } from "./AmbientAudio";
 
 export function Shell({
   children,
@@ -19,7 +20,9 @@ export function Shell({
 
       <div
         className={
-          overlayHeader ? "relative z-10 min-h-screen w-full" : "relative z-10 flex min-h-screen w-full flex-col"
+          overlayHeader
+            ? "relative z-10 min-h-screen w-full"
+            : "relative z-10 flex min-h-screen w-full flex-col"
         }
       >
         <header
@@ -30,7 +33,7 @@ export function Shell({
           }
         >
           <Link to="/" className="flex items-center gap-2 text-foreground/80">
-          <span className="font-serif-display text-sm uppercase text-foreground/70">一</span>
+            <span className="font-serif-display text-sm uppercase text-foreground/70">一</span>
             <span
               className="inline-block h-1.5 w-1.5 rounded-full bg-primary breathe mx-0.1"
               style={{ boxShadow: "0 0 12px var(--primary)" }}
@@ -38,14 +41,17 @@ export function Shell({
             <span className="font-serif-display text-sm uppercase text-foreground/70">签</span>
           </Link>
 
-          {showTemple && (
-            <Link
-              to="/temple"
-              className="text-[12px] tracking-[0.4em] uppercase text-foreground/45 hover:text-foreground/80 transition-colors"
-            >
-              心庙
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            <AmbientAudioToggle />
+            {showTemple && (
+              <Link
+                to="/temple"
+                className="text-[12px] tracking-[0.4em] uppercase text-foreground/45 hover:text-foreground/80 transition-colors"
+              >
+                心庙
+              </Link>
+            )}
+          </div>
         </header>
 
         {children}

@@ -194,6 +194,28 @@
   animation: breathe 6s ease-in-out infinite;
 }
 
+@keyframes ambient-audio-invite {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+    box-shadow: 0 0 0 oklch(0.74 0.13 55 / 0);
+  }
+  38% {
+    opacity: 0.72;
+    box-shadow: 0 0 18px oklch(0.74 0.13 55 / 0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+    box-shadow: 0 0 28px oklch(0.74 0.13 55 / 0);
+  }
+}
+
+.ambient-audio-invite-glow {
+  animation: ambient-audio-invite 2.8s ease-out 3;
+  transform-origin: center;
+}
+
 @keyframes radiate-particle {
   0% {
     transform: translate(-50%, -50%) translate(0, 0) scale(0.4);

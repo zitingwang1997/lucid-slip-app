@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { identifyClarityUser, initializeClarity } from "../lib/clarity";
+import { AmbientAudio } from "../components/AmbientAudio";
 import { Shell } from "../components/Shell";
 import { RitualErrorScreen } from "../components/RitualErrorScreen";
 
@@ -66,8 +67,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "一签 OneSlip" },
       { name: "twitter:description", content: "提一个问题，求一支签，与AI一同安静地解签。" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/242b3f1c-1d6f-4e85-94d7-b80bf8b807a3/id-preview-d28b04ae--618815a0-2c44-40d8-ad6b-b175e99bdb7c.lovable.app-1780696481499.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/242b3f1c-1d6f-4e85-94d7-b80bf8b807a3/id-preview-d28b04ae--618815a0-2c44-40d8-ad6b-b175e99bdb7c.lovable.app-1780696481499.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/242b3f1c-1d6f-4e85-94d7-b80bf8b807a3/id-preview-d28b04ae--618815a0-2c44-40d8-ad6b-b175e99bdb7c.lovable.app-1780696481499.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/242b3f1c-1d6f-4e85-94d7-b80bf8b807a3/id-preview-d28b04ae--618815a0-2c44-40d8-ad6b-b175e99bdb7c.lovable.app-1780696481499.png",
+      },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -101,8 +110,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AmbientAudio>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </AmbientAudio>
     </QueryClientProvider>
   );
 }
