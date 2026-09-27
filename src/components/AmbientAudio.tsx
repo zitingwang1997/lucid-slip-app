@@ -11,7 +11,17 @@ import { Volume2, VolumeX } from "lucide-react";
 import { trackClarityEvent } from "@/lib/clarity";
 
 const AUDIO_PREFERENCE_KEY = "oneslip.audioEnabled";
-const TARGET_VOLUME = 0.05;
+const TARGET_VOLUME = 0.1;
+
+interface NetworkInformation {
+  effectiveType?: string;
+  saveData?: boolean;
+}
+
+interface IdleWindow extends Window {
+  cancelIdleCallback?: (handle: number) => void;
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+}
 
 interface AmbientAudioContextValue {
   enabled: boolean;
@@ -103,6 +113,46 @@ export function AmbientAudio({ children }: { children: ReactNode }) {
   }, [fadeTo]);
 
   useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+    if (connection?.saveData || /2g|3g/.test(connection?.effectiveType ?? "")) return;
+
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const idleWindow = window as IdleWindow;
+    let delayTimer: number | undefined;
+    let idleHandle: number | undefined;
+
+    const preloadAudio = () => {
+      if (!audio.paused || audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+      audio.preload = "auto";
+      audio.load();
+    };
+
+    const schedulePreload = () => {
+      delayTimer = window.setTimeout(() => {
+        if (idleWindow.requestIdleCallback) {
+          idleHandle = idleWindow.requestIdleCallback(preloadAudio, { timeout: 5_000 });
+        } else {
+          preloadAudio();
+        }
+      }, 4_000);
+    };
+
+    if (document.readyState === "complete") {
+      schedulePreload();
+    } else {
+      window.addEventListener("load", schedulePreload, { once: true });
+    }
+
+    return () => {
+      window.removeEventListener("load", schedulePreload);
+      if (delayTimer !== undefined) window.clearTimeout(delayTimer);
+      if (idleHandle !== undefined) idleWindow.cancelIdleCallback?.(idleHandle);
+    };
+  }, []);
+
+  useEffect(() => {
     const preference = readAudioPreference();
     setHasChosen(preference !== null);
     if (preference !== true) return;
@@ -173,7 +223,7 @@ export function AmbientAudio({ children }: { children: ReactNode }) {
 
   return (
     <AmbientAudioContext.Provider value={{ enabled, hasChosen, toggleAudio }}>
-      <audio ref={audioRef} src="/audio/oneslip-ambient.mp3" preload="none" loop />
+      <audio ref={audioRef} src="/audio/oneslip-ambient.m4a" preload="none" loop />
       {children}
     </AmbientAudioContext.Provider>
   );
