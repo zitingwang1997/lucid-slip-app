@@ -212,7 +212,6 @@ function PoemPage() {
   const beginHold = () => {
     if (!revealed) return;
     if (holdCompleted.current) return;
-    if (interpretStatus === "error") return;
     holdStart.current = 0;
     stopHoldRaf();
     const tick = (ts: number) => {
@@ -266,7 +265,10 @@ function PoemPage() {
 
   if (!slip) return null;
 
-  if (interpretStatus === "error") {
+  // Workflow B starts in the background while the slip is being revealed.
+  // Do not interrupt the slip or disable its hold interaction when that preload
+  // fails; surface the error only after the user has completed the ritual.
+  if (interpretStatus === "error" && awaitingInterpret) {
     return (
       <Shell intensity={0.5}>
         <RitualErrorScreen
