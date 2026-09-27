@@ -11,7 +11,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { trackClarityEvent } from "@/lib/clarity";
 
 const AUDIO_PREFERENCE_KEY = "oneslip.audioEnabled";
-const TARGET_VOLUME = 0.1;
+const TARGET_VOLUME = 0.05;
 
 interface AmbientAudioContextValue {
   enabled: boolean;
