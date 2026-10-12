@@ -45,6 +45,30 @@ const LOCAL_IMAGE_BY_QIAN_NUMBER: Record<number, string> = {
 
 const preloadCache = new Map<string, HTMLImageElement>();
 
+const LOCAL_IMAGES_BY_LEVEL: Record<string, readonly string[]> = {
+  上吉: [shangjiMingxinAUrl, shangjiMingxinBUrl],
+  吉: [jiJingxinUrl],
+  中平: [zhongpingPojuUrl],
+  下: [xiaShihuaiAUrl, xiaShihuaiBUrl],
+  平: [pingWukongUrl],
+};
+
+function getLevelImage(slip: SelectedSlip): string | undefined {
+  const level = String(slip.sign_level ?? "").trim();
+  const images = Object.prototype.hasOwnProperty.call(LOCAL_IMAGES_BY_LEVEL, level)
+    ? LOCAL_IMAGES_BY_LEVEL[level]
+    : undefined;
+  if (!images) return undefined;
+
+  // Keep the same face across draws, interpretation, and saved history.
+  const identity = String(slip.id ?? slip.number ?? slip.title ?? "");
+  let hash = 0;
+  for (const character of identity) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return images[hash % images.length];
+}
+
 /** Download only the selected sign face once the draw result is known. */
 export function preloadSlipImage(slip: SelectedSlip) {
   if (typeof window === "undefined") return;
@@ -115,11 +139,12 @@ function parseChineseQianNumber(value: string): number | null {
 }
 
 function getQianNumber(slip: SelectedSlip): number | null {
+  // A new record must not inherit an old face from a reused image URL.
+  const recordId = Number(slip.id);
+  if (Number.isSafeInteger(recordId) && recordId > 0) return recordId;
+
   const imageMatch = slip.image_url?.match(/qian_(\d+)\.(?:png|webp)(?:$|[?#])/i);
   if (imageMatch) return Number(imageMatch[1]);
-
-  const id = Number(slip.id);
-  if (Number.isInteger(id) && id >= 1 && id <= 33) return id;
 
   return parseChineseQianNumber(String(slip.number ?? ""));
 }
@@ -131,12 +156,14 @@ export interface SlipImageSources {
 }
 
 /**
- * Resolve one of the seven bundled sign faces first. The existing Supabase URL
+ * Preserve the original numbered faces, then resolve new signs by level.
+ * The existing Supabase URL
  * remains available as a fallback so an unexpected record does not lose art.
  */
 export function getSlipImageSources(slip: SelectedSlip): SlipImageSources {
   const qianNumber = getQianNumber(slip);
-  const local = qianNumber == null ? undefined : LOCAL_IMAGE_BY_QIAN_NUMBER[qianNumber];
+  const legacy = qianNumber == null ? undefined : LOCAL_IMAGE_BY_QIAN_NUMBER[qianNumber];
+  const local = legacy ?? getLevelImage(slip);
   const remote = slip.image_url?.trim() || undefined;
 
   if (local) {
