@@ -17,7 +17,6 @@ import {
 import { interpretSlip } from "@/lib/dify.functions";
 import { getAnonymousUserId } from "@/lib/anonymous-user";
 import { trackClarityEvent } from "@/lib/clarity";
-import { getPoemColumns } from "@/lib/poem-layout";
 
 export const Route = createFileRoute("/poem")({
   head: () => ({ meta: [{ title: "签诗 · 一签" }] }),
@@ -293,7 +292,26 @@ function PoemPage() {
     );
   }
 
-  const { rightColumn, leftColumn } = getPoemColumns(slip.poem);
+  const normalizePoemColumn = (text: string) => {
+    if (!text) return "";
+    return /[，。！？；]$/.test(text) ? text : `${text}。`;
+  };
+
+  const poemSentences =
+    (slip.poem ?? "")
+      .match(/[^。！？]+[。！？]?/g)
+      ?.map((s) => s.trim())
+      .filter(Boolean) ?? [];
+
+  const midpoint = Math.ceil(poemSentences.length / 2);
+
+  const rightColumn = normalizePoemColumn(poemSentences.slice(0, midpoint).join(""));
+
+  const leftColumn = normalizePoemColumn(poemSentences.slice(midpoint).join(""));
+
+  console.log("poemSentences", poemSentences);
+  console.log("rightColumn", rightColumn);
+  console.log("leftColumn", leftColumn);
 
   const longestColumnLength = Math.max(rightColumn.length, leftColumn.length);
 
